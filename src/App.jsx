@@ -4,12 +4,12 @@ import { Plus, Trash2, Calculator, FileText, PoundSterling, MessageCircle, Mail,
 export default function TilingEstimator() {
   const [page, setPage] = useState('estimate');
   const [customer, setCustomer] = useState({ name: '', address: '', phone: '', email: '' });
-  const [rooms, setRooms] = useState([{ id: 1, name: 'Room 1', length: '', width: '', surfaceType: 'floor', trowelSize: '10', useCementBoard: false, useAntiCrack: false, useTanking: false, useGroutCalc: false, tileWidth: '', tileHeight: '', groutWidth: '3', tileThickness: '10', useTrim: false, trimLength: '', notes: '', notesPrice: '', isNaturalStone: false, photos: [] }]);
+  const [rooms, setRooms] = useState([{ id: 1, name: 'Room 1', length: '', width: '', surfaceType: 'floor', trowelSize: '10', useCementBoard: false, useAntiCrack: false, useTanking: false, useGroutCalc: false, tileWidth: '', tileHeight: '', groutWidth: '3', tileThickness: '10', useTrim: false, trimLength: '', notes: '', notesPrice: '', isNaturalStone: false, useSealant: false, sealantTubes: '1', useLevelingCompound: false, levelingDepth: '2', photos: [] }]);
   const [addressSearch, setAddressSearch] = useState('');
   const [addressResults, setAddressResults] = useState([]);
   const [searchingAddress, setSearchingAddress] = useState(false);
   const [labour, setLabour] = useState({ type: 'm2', m2Rate: '50', dayRate: '250', daysEstimate: '1', prepWork: false, prepRate: '30', prepHours: '0' });
-  const [pricing, setPricing] = useState({ adhesivePrice: '15', groutPrice: '8', cementBoardPrice: '12', antiCrackPrice: '5', tankingPrice: '35', trimPrice: '8', sealerPrice: '25', profitMargin: '20', wastePercentage: '20' });
+  const [pricing, setPricing] = useState({ adhesivePrice: '15', groutPrice: '8', cementBoardPrice: '12', antiCrackPrice: '5', tankingPrice: '35', trimPrice: '8', sealerPrice: '25', sealantPrice: '5', levelingCompoundPrice: '18', profitMargin: '20', wastePercentage: '20' });
   const [savedCustomers, setSavedCustomers] = useState([]);
   const [savedQuotes, setSavedQuotes] = useState([]);
   const [currentQuoteId, setCurrentQuoteId] = useState(null);
@@ -84,12 +84,23 @@ export default function TilingEstimator() {
   };
 
   const calculateTotals = () => {
-    let area = 0, adhesive = 0, grout = 0, cement = 0, antiCrack = 0, tank = 0, trim = 0, notesTotal = 0, sealerArea = 0;
+    let area = 0, adhesive = 0, grout = 0, cement = 0, antiCrack = 0, tank = 0, trim = 0, notesTotal = 0, sealerArea = 0, sealantTubes = 0, levelingCompound = 0;
     rooms.forEach(r => {
       const a = parseFloat(r.length || 0) * parseFloat(r.width || 0);
       area += a;
       if (a > 0) {
         adhesive += a / adhesiveCoverage[r.trowelSize];
+        
+        // Extra adhesive for anti-crack membrane: 2kg/m² = 10m² per 20kg bag
+        if (r.useAntiCrack) {
+          adhesive += a / 10;
+        }
+        
+        // Extra adhesive for cement board: 2kg/m² = 10m² per 20kg bag
+        if (r.useCementBoard) {
+          adhesive += a / 10;
+        }
+        
         if (r.useGroutCalc && r.tileWidth && r.tileHeight) {
           const A = parseFloat(r.tileWidth) + parseFloat(r.tileHeight);
           const B = parseFloat(r.groutWidth) * parseFloat(r.tileThickness);
@@ -103,7 +114,14 @@ export default function TilingEstimator() {
         if (r.surfaceType === 'wall' && r.useTanking) tank += a / 4;
         if (r.useTrim && r.trimLength) trim += parseFloat(r.trimLength);
         if (r.isNaturalStone) sealerArea += a;
+        
+        // Leveling compound calculation: 2mm = 4m² per 20kg, 3mm = 2.7m² per 20kg, 4mm = 2m² per 20kg
+        if (r.useLevelingCompound) {
+          const coverage = { '2': 4, '3': 2.7, '4': 2 };
+          levelingCompound += a / coverage[r.levelingDepth || '2'];
+        }
       }
+      if (r.useSealant && r.sealantTubes) sealantTubes += parseFloat(r.sealantTubes || 0);
       if (r.notesPrice) notesTotal += parseFloat(r.notesPrice || 0);
     });
     const adhesiveBags = Math.ceil(adhesive * 1.2);
@@ -112,13 +130,14 @@ export default function TilingEstimator() {
     const tankingTubs = Math.ceil(tank * 1.2);
     const trimLengths = Math.ceil(trim / 2.5);
     const sealerBottles = Math.ceil((sealerArea / 10) * 2); // 2 coats, 10m² per bottle
+    const levelingBags = Math.ceil(levelingCompound * 1.2);
     const labourCost = labour.type === 'm2' ? area * parseFloat(labour.m2Rate || 0) : parseFloat(labour.dayRate || 0) * parseFloat(labour.daysEstimate || 0);
     const prepCost = labour.prepWork ? parseFloat(labour.prepRate || 0) * parseFloat(labour.prepHours || 0) : 0;
-    const baseMat = (adhesiveBags * parseFloat(pricing.adhesivePrice || 0)) + (groutBags * parseFloat(pricing.groutPrice || 0)) + (cementBoards * parseFloat(pricing.cementBoardPrice || 0)) + (antiCrack * 1.2 * parseFloat(pricing.antiCrackPrice || 0)) + (tankingTubs * parseFloat(pricing.tankingPrice || 0)) + (trimLengths * parseFloat(pricing.trimPrice || 0)) + (sealerBottles * parseFloat(pricing.sealerPrice || 0));
+    const baseMat = (adhesiveBags * parseFloat(pricing.adhesivePrice || 0)) + (groutBags * parseFloat(pricing.groutPrice || 0)) + (cementBoards * parseFloat(pricing.cementBoardPrice || 0)) + (antiCrack * 1.2 * parseFloat(pricing.antiCrackPrice || 0)) + (tankingTubs * parseFloat(pricing.tankingPrice || 0)) + (trimLengths * parseFloat(pricing.trimPrice || 0)) + (sealerBottles * parseFloat(pricing.sealerPrice || 0)) + (sealantTubes * parseFloat(pricing.sealantPrice || 0)) + (levelingBags * parseFloat(pricing.levelingCompoundPrice || 0));
     const matCost = baseMat * (1 + parseFloat(pricing.profitMargin || 0) / 100);
     const totalLabourCost = labourCost + prepCost;
     const totalCost = matCost + totalLabourCost + notesTotal;
-    return { totalArea: area.toFixed(2), adhesiveBags, groutBags, cementBoards, antiCrackMembrane: antiCrack.toFixed(2), tankingTubs, trimLengths, sealerBottles, sealerArea: sealerArea.toFixed(2), labourCost: labourCost.toFixed(2), prepCost: prepCost.toFixed(2), totalLabourCost: totalLabourCost.toFixed(2), notesTotal: notesTotal.toFixed(2), materialsCost: matCost.toFixed(2), profitAmount: (matCost - baseMat).toFixed(2), totalCost: totalCost.toFixed(2) };
+    return { totalArea: area.toFixed(2), adhesiveBags, groutBags, cementBoards, antiCrackMembrane: antiCrack.toFixed(2), tankingTubs, trimLengths, sealerBottles, sealerArea: sealerArea.toFixed(2), sealantTubes: Math.round(sealantTubes), levelingBags, labourCost: labourCost.toFixed(2), prepCost: prepCost.toFixed(2), totalLabourCost: totalLabourCost.toFixed(2), notesTotal: notesTotal.toFixed(2), materialsCost: matCost.toFixed(2), profitAmount: (matCost - baseMat).toFixed(2), totalCost: totalCost.toFixed(2) };
   };
 
   const totals = calculateTotals();
@@ -143,7 +162,7 @@ export default function TilingEstimator() {
         </div>
 
         <div className="bg-white rounded shadow p-3 mb-4 flex gap-2">
-          <button onClick={() => { setCustomer({ name: '', address: '', phone: '', email: '' }); setRooms([{ id: 1, name: 'Room 1', length: '', width: '', surfaceType: 'floor', trowelSize: '10', useCementBoard: false, useAntiCrack: false, useTanking: false, useGroutCalc: false, tileWidth: '', tileHeight: '', groutWidth: '3', tileThickness: '10', useTrim: false, trimLength: '', notes: '', notesPrice: '', isNaturalStone: false, photos: [] }]); setCurrentQuoteId(null); }} className="px-3 py-2 bg-green-600 text-white rounded text-sm">
+          <button onClick={() => { setCustomer({ name: '', address: '', phone: '', email: '' }); setRooms([{ id: 1, name: 'Room 1', length: '', width: '', surfaceType: 'floor', trowelSize: '10', useCementBoard: false, useAntiCrack: false, useTanking: false, useGroutCalc: false, tileWidth: '', tileHeight: '', groutWidth: '3', tileThickness: '10', useTrim: false, trimLength: '', notes: '', notesPrice: '', isNaturalStone: false, useSealant: false, sealantTubes: '1', useLevelingCompound: false, levelingDepth: '2', photos: [] }]); setCurrentQuoteId(null); }} className="px-3 py-2 bg-green-600 text-white rounded text-sm">
             <Plus className="w-4 h-4 inline mr-1" />New
           </button>
           <button onClick={() => { if (!customer.name) return alert('Enter name'); const q = { id: currentQuoteId || Date.now(), customer, rooms, labour, pricing, totals, date: new Date().toISOString() }; const u = currentQuoteId ? savedQuotes.map(sq => sq.id === currentQuoteId ? q : sq) : [...savedQuotes, q]; setSavedQuotes(u); localStorage.setItem('tilingQuotes', JSON.stringify(u)); if (!currentQuoteId) setCurrentQuoteId(q.id); alert('Saved!'); }} className={`px-3 py-2 ${theme.primary} text-white rounded text-sm`}>
@@ -252,7 +271,7 @@ export default function TilingEstimator() {
             <div className="mb-6">
               <div className="flex justify-between mb-3">
                 <h2 className="text-lg font-semibold">Rooms</h2>
-                <button onClick={() => setRooms([...rooms, { id: rooms.length + 1, name: `Room ${rooms.length + 1}`, length: '', width: '', surfaceType: 'floor', trowelSize: '10', useCementBoard: false, useAntiCrack: false, useTanking: false, useGroutCalc: false, tileWidth: '', tileHeight: '', groutWidth: '3', tileThickness: '10', useTrim: false, trimLength: '', notes: '', notesPrice: '', isNaturalStone: false, photos: [] }])} className="px-2 py-1 bg-blue-600 text-white rounded text-xs">Add</button>
+                <button onClick={() => setRooms([...rooms, { id: rooms.length + 1, name: `Room ${rooms.length + 1}`, length: '', width: '', surfaceType: 'floor', trowelSize: '10', useCementBoard: false, useAntiCrack: false, useTanking: false, useGroutCalc: false, tileWidth: '', tileHeight: '', groutWidth: '3', tileThickness: '10', useTrim: false, trimLength: '', notes: '', notesPrice: '', isNaturalStone: false, useSealant: false, sealantTubes: '1', useLevelingCompound: false, levelingDepth: '2', photos: [] }])} className="px-2 py-1 bg-blue-600 text-white rounded text-xs">Add</button>
               </div>
               {rooms.map(r => (
                 <div key={r.id} className="bg-gray-50 p-3 rounded mb-3">
@@ -277,12 +296,30 @@ export default function TilingEstimator() {
                     <div className="bg-blue-50 p-2 rounded text-xs space-y-1 mb-2">
                       <label className="flex items-center gap-1">
                         <input type="checkbox" checked={r.useCementBoard} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, useCementBoard: e.target.checked} : rm))} />
-                        Cement Board (0.76m² per board)
+                        Cement Board {r.useCementBoard && <span className="text-blue-700 font-medium">(+2kg/m² adhesive)</span>}
                       </label>
                       <label className="flex items-center gap-1">
                         <input type="checkbox" checked={r.useAntiCrack} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, useAntiCrack: e.target.checked} : rm))} />
-                        Anti-Crack Membrane
+                        Anti-Crack Membrane {r.useAntiCrack && <span className="text-blue-700 font-medium">(+2kg/m² adhesive)</span>}
                       </label>
+                      <label className="flex items-center gap-1">
+                        <input type="checkbox" checked={r.useLevelingCompound} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, useLevelingCompound: e.target.checked} : rm))} />
+                        Leveling Compound
+                      </label>
+                      {r.useLevelingCompound && (
+                        <div className="bg-white p-2 rounded ml-4 mt-1">
+                          <label className="block text-xs mb-1">Depth</label>
+                          <select 
+                            value={r.levelingDepth} 
+                            onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, levelingDepth: e.target.value} : rm))} 
+                            className="w-full px-2 py-1 border rounded text-sm"
+                          >
+                            <option value="2">2mm (4m² per bag)</option>
+                            <option value="3">3mm (2.7m² per bag)</option>
+                            <option value="4">4mm (2m² per bag)</option>
+                          </select>
+                        </div>
+                      )}
                     </div>
                   )}
                   {r.surfaceType === 'wall' && (
@@ -336,6 +373,27 @@ export default function TilingEstimator() {
                     {r.isNaturalStone && (
                       <div className="bg-amber-50 p-2 rounded">
                         <p className="text-xs text-amber-800">Sealer required: {Math.ceil((parseFloat(r.length || 0) * parseFloat(r.width || 0) / 10) * 2)} bottles (2 coats, 10m² per bottle)</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-2 pt-2 border-t">
+                    <label className="flex items-center gap-2 text-xs mb-2">
+                      <input type="checkbox" checked={r.useSealant} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, useSealant: e.target.checked} : rm))} />
+                      Add Sealant (silicone)
+                    </label>
+                    {r.useSealant && (
+                      <div className="bg-cyan-50 p-2 rounded">
+                        <label className="text-xs">Number of Tubes</label>
+                        <input 
+                          type="number" 
+                          step="1" 
+                          min="1"
+                          value={r.sealantTubes} 
+                          onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, sealantTubes: e.target.value} : rm))} 
+                          className="w-full px-2 py-1 border rounded text-sm mt-1" 
+                          placeholder="1" 
+                        />
+                        <p className="text-xs text-cyan-800 mt-1">{r.sealantTubes || 1} tube(s) @ £{pricing.sealantPrice} each</p>
                       </div>
                     )}
                   </div>
@@ -400,7 +458,9 @@ export default function TilingEstimator() {
                 {parseFloat(totals.antiCrackMembrane) > 0 && <div className="bg-white p-2 rounded"><div className="text-xs text-gray-600">Anti-Crack</div><div className="font-bold">{totals.antiCrackMembrane}m²</div></div>}
                 {totals.tankingTubs > 0 && <div className="bg-white p-2 rounded"><div className="text-xs text-gray-600">Tanking</div><div className="font-bold">{totals.tankingTubs} tubs</div></div>}
                 {totals.trimLengths > 0 && <div className="bg-white p-2 rounded"><div className="text-xs text-gray-600">Trim</div><div className="font-bold">{totals.trimLengths} x 2.5m</div></div>}
+                {totals.levelingBags > 0 && <div className="bg-white p-2 rounded"><div className="text-xs text-gray-600">Leveling Compound</div><div className="font-bold">{totals.levelingBags} bags</div></div>}
                 {totals.sealerBottles > 0 && <div className="bg-white p-2 rounded"><div className="text-xs text-gray-600">Stone Sealer</div><div className="font-bold">{totals.sealerBottles} bottles</div></div>}
+                {totals.sealantTubes > 0 && <div className="bg-white p-2 rounded"><div className="text-xs text-gray-600">Sealant</div><div className="font-bold">{totals.sealantTubes} tubes</div></div>}
                 {parseFloat(totals.prepCost) > 0 && <div className="bg-white p-2 rounded"><div className="text-xs text-gray-600">Prep Work</div><div className="font-bold">£{totals.prepCost}</div></div>}
                 {parseFloat(totals.notesTotal) > 0 && <div className="bg-white p-2 rounded"><div className="text-xs text-gray-600">Extra Work</div><div className="font-bold">£{totals.notesTotal}</div></div>}
                 <div className="bg-white p-2 rounded"><div className="text-xs text-gray-600">Total</div><div className="font-bold text-green-600">£{totals.totalCost}</div></div>
@@ -416,7 +476,7 @@ export default function TilingEstimator() {
               <button onClick={() => { localStorage.setItem('tilingPricing', JSON.stringify(pricing)); alert('Saved!'); }} className="px-3 py-2 bg-green-600 text-white rounded text-sm">Save Prices</button>
             </div>
             <div className="space-y-3">
-              {[['adhesivePrice', 'Adhesive (20kg)'], ['groutPrice', 'Grout (2.5kg)'], ['cementBoardPrice', 'Cement Board'], ['antiCrackPrice', 'Anti-Crack (m²)'], ['tankingPrice', 'Tanking (tub)'], ['trimPrice', 'Tile Trim (2.5m)'], ['sealerPrice', 'Stone Sealer (bottle)'], ['wastePercentage', 'Waste % (10-30)'], ['profitMargin', 'Profit Margin (%)']].map(([k, l]) => (
+              {[['adhesivePrice', 'Adhesive (20kg)'], ['groutPrice', 'Grout (2.5kg)'], ['cementBoardPrice', 'Cement Board'], ['antiCrackPrice', 'Anti-Crack (m²)'], ['tankingPrice', 'Tanking (tub)'], ['trimPrice', 'Tile Trim (2.5m)'], ['levelingCompoundPrice', 'Leveling Compound (20kg)'], ['sealerPrice', 'Stone Sealer (bottle)'], ['sealantPrice', 'Sealant (tube)'], ['wastePercentage', 'Waste % (10-30)'], ['profitMargin', 'Profit Margin (%)']].map(([k, l]) => (
                 <div key={k}><label className="block text-sm mb-1">{l}</label><input type="number" step="0.01" value={pricing[k]} onChange={(e) => setPricing({...pricing, [k]: e.target.value})} className="w-full px-2 py-1.5 border rounded" /></div>
               ))}
             </div>
@@ -432,7 +492,7 @@ Phone: ${customer.phone}
 Total Area: ${totals.totalArea}m²
 Adhesive: ${totals.adhesiveBags} bags @ £${pricing.adhesivePrice}
 Grout: ${totals.groutBags} bags @ £${pricing.groutPrice}
-${totals.cementBoards > 0 ? `Cement Boards: ${totals.cementBoards} @ £${pricing.cementBoardPrice}\n` : ''}${parseFloat(totals.antiCrackMembrane) > 0 ? `Anti-Crack: ${totals.antiCrackMembrane}m² @ £${pricing.antiCrackPrice}\n` : ''}${totals.tankingTubs > 0 ? `Tanking: ${totals.tankingTubs} tubs @ £${pricing.tankingPrice}\n` : ''}${totals.trimLengths > 0 ? `Tile Trim: ${totals.trimLengths} x 2.5m @ £${pricing.trimPrice}\n` : ''}${totals.sealerBottles > 0 ? `Stone Sealer: ${totals.sealerBottles} bottles @ £${pricing.sealerPrice}\n` : ''}
+${totals.cementBoards > 0 ? `Cement Boards: ${totals.cementBoards} @ £${pricing.cementBoardPrice}\n` : ''}${parseFloat(totals.antiCrackMembrane) > 0 ? `Anti-Crack: ${totals.antiCrackMembrane}m² @ £${pricing.antiCrackPrice}\n` : ''}${totals.tankingTubs > 0 ? `Tanking: ${totals.tankingTubs} tubs @ £${pricing.tankingPrice}\n` : ''}${totals.trimLengths > 0 ? `Tile Trim: ${totals.trimLengths} x 2.5m @ £${pricing.trimPrice}\n` : ''}${totals.levelingBags > 0 ? `Leveling Compound: ${totals.levelingBags} bags @ £${pricing.levelingCompoundPrice}\n` : ''}${totals.sealerBottles > 0 ? `Stone Sealer: ${totals.sealerBottles} bottles @ £${pricing.sealerPrice}\n` : ''}${totals.sealantTubes > 0 ? `Sealant: ${totals.sealantTubes} tubes @ £${pricing.sealantPrice}\n` : ''}
 Materials: £${totals.materialsCost}
 Tiling Labour: £${totals.labourCost}
 ${parseFloat(totals.prepCost) > 0 ? `Prep Work: £${totals.prepCost}\n` : ''}${parseFloat(totals.notesTotal) > 0 ? `Extra Work: £${totals.notesTotal}\n` : ''}Total Labour: £${totals.totalLabourCost}
