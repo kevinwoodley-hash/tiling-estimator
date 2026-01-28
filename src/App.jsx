@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calculator, FileText, PoundSterling, MessageCircle, Mail, Download, Save, FolderOpen, Users, Camera, X, Search } from 'lucide-react';
+import { Plus, Trash2, Calculator, FileText, PoundSterling, MessageCircle, Mail, Download, Save, FolderOpen, Users, Camera, X, Search, Settings } from 'lucide-react';
 
 export default function TilingEstimator() {
   const [page, setPage] = useState('estimate');
@@ -15,6 +15,19 @@ export default function TilingEstimator() {
   const [currentQuoteId, setCurrentQuoteId] = useState(null);
   const [showCustomerList, setShowCustomerList] = useState(false);
   const [showQuoteList, setShowQuoteList] = useState(false);
+  const [currentTheme, setCurrentTheme] = useState('blue');
+  const [companyInfo, setCompanyInfo] = useState({ name: '', logo: '' });
+
+  const themes = {
+    blue: { primary: 'bg-blue-600', secondary: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-600', name: 'Professional Blue' },
+    green: { primary: 'bg-green-600', secondary: 'bg-green-50', border: 'border-green-200', text: 'text-green-600', name: 'Fresh Green' },
+    purple: { primary: 'bg-purple-600', secondary: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-600', name: 'Royal Purple' },
+    orange: { primary: 'bg-orange-600', secondary: 'bg-orange-50', border: 'border-orange-200', text: 'text-orange-600', name: 'Vibrant Orange' },
+    slate: { primary: 'bg-slate-600', secondary: 'bg-slate-50', border: 'border-slate-200', text: 'text-slate-600', name: 'Modern Slate' },
+    red: { primary: 'bg-red-600', secondary: 'bg-red-50', border: 'border-red-200', text: 'text-red-600', name: 'Bold Red' }
+  };
+
+  const theme = themes[currentTheme];
 
   useEffect(() => {
     const c = localStorage.getItem('tilingCustomers');
@@ -23,6 +36,10 @@ export default function TilingEstimator() {
     if (q) setSavedQuotes(JSON.parse(q));
     const p = localStorage.getItem('tilingPricing');
     if (p) setPricing(JSON.parse(p));
+    const t = localStorage.getItem('tilingTheme');
+    if (t) setCurrentTheme(t);
+    const co = localStorage.getItem('tilingCompanyInfo');
+    if (co) setCompanyInfo(JSON.parse(co));
   }, []);
 
   const adhesiveCoverage = { '3': 8, '6': 5.5, '10': 3.3, '12': 3.3 };
@@ -109,10 +126,16 @@ export default function TilingEstimator() {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-6xl mx-auto">
+        {companyInfo.logo && (
+          <div className="bg-white rounded shadow p-4 mb-4 flex items-center gap-3">
+            <img src={companyInfo.logo} alt={companyInfo.name} className="h-12 object-contain" />
+            {companyInfo.name && <h1 className="text-xl font-bold">{companyInfo.name}</h1>}
+          </div>
+        )}
         <div className="bg-white rounded shadow mb-4">
           <div className="flex border-b">
-            {[['estimate', Calculator], ['pricing', PoundSterling], ['quote', FileText]].map(([p, Icon]) => (
-              <button key={p} onClick={() => setPage(p)} className={`flex-1 px-4 py-3 ${page === p ? 'text-blue-600 border-b-2 border-blue-600' : ''}`}>
+            {[['estimate', Calculator], ['pricing', PoundSterling], ['quote', FileText], ['settings', Settings]].map(([p, Icon]) => (
+              <button key={p} onClick={() => setPage(p)} className={`flex-1 px-4 py-3 ${page === p ? `${theme.text} border-b-2 ${theme.primary.replace('bg-', 'border-')}` : ''}`}>
                 <Icon className="w-5 h-5 inline mr-2" />{p.charAt(0).toUpperCase() + p.slice(1)}
               </button>
             ))}
@@ -123,7 +146,7 @@ export default function TilingEstimator() {
           <button onClick={() => { setCustomer({ name: '', address: '', phone: '', email: '' }); setRooms([{ id: 1, name: 'Room 1', length: '', width: '', surfaceType: 'floor', trowelSize: '10', useCementBoard: false, useAntiCrack: false, useTanking: false, useGroutCalc: false, tileWidth: '', tileHeight: '', groutWidth: '3', tileThickness: '10', useTrim: false, trimLength: '', notes: '', notesPrice: '', isNaturalStone: false, photos: [] }]); setCurrentQuoteId(null); }} className="px-3 py-2 bg-green-600 text-white rounded text-sm">
             <Plus className="w-4 h-4 inline mr-1" />New
           </button>
-          <button onClick={() => { if (!customer.name) return alert('Enter name'); const q = { id: currentQuoteId || Date.now(), customer, rooms, labour, pricing, totals, date: new Date().toISOString() }; const u = currentQuoteId ? savedQuotes.map(sq => sq.id === currentQuoteId ? q : sq) : [...savedQuotes, q]; setSavedQuotes(u); localStorage.setItem('tilingQuotes', JSON.stringify(u)); if (!currentQuoteId) setCurrentQuoteId(q.id); alert('Saved!'); }} className="px-3 py-2 bg-blue-600 text-white rounded text-sm">
+          <button onClick={() => { if (!customer.name) return alert('Enter name'); const q = { id: currentQuoteId || Date.now(), customer, rooms, labour, pricing, totals, date: new Date().toISOString() }; const u = currentQuoteId ? savedQuotes.map(sq => sq.id === currentQuoteId ? q : sq) : [...savedQuotes, q]; setSavedQuotes(u); localStorage.setItem('tilingQuotes', JSON.stringify(u)); if (!currentQuoteId) setCurrentQuoteId(q.id); alert('Saved!'); }} className={`px-3 py-2 ${theme.primary} text-white rounded text-sm`}>
             <Save className="w-4 h-4 inline mr-1" />{currentQuoteId ? 'Update' : 'Save'}
           </button>
           <button onClick={() => setShowQuoteList(!showQuoteList)} className="px-3 py-2 bg-purple-600 text-white rounded text-sm">
@@ -422,6 +445,72 @@ ${rooms.filter(r => r.notes).map(r => `${r.name}: ${r.notes}${r.notesPrice ? ` (
             <div className="flex gap-2">
               <button onClick={() => window.open(`https://wa.me/${customer.phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Quote: £${totals.totalCost}`)}`, '_blank')} className="px-4 py-2 bg-green-600 text-white rounded text-sm"><MessageCircle className="w-4 h-4 inline mr-1" />WhatsApp</button>
               <button onClick={() => window.location.href = `mailto:${customer.email}?subject=Quote&body=${encodeURIComponent(`Total: £${totals.totalCost}`)}`} className="px-4 py-2 bg-blue-600 text-white rounded text-sm"><Mail className="w-4 h-4 inline mr-1" />Email</button>
+            </div>
+          </div>
+        )}
+
+        {page === 'settings' && (
+          <div className="bg-white rounded shadow p-4">
+            <h1 className="text-2xl font-bold mb-4">Settings</h1>
+            
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold mb-3">Company Information</h2>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs mb-1">Company Name</label>
+                  <input 
+                    type="text" 
+                    value={companyInfo.name} 
+                    onChange={(e) => setCompanyInfo({...companyInfo, name: e.target.value})} 
+                    className="w-full px-2 py-1.5 border rounded text-sm" 
+                    placeholder="Your Company Name"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs mb-1">Company Logo URL</label>
+                  <input 
+                    type="text" 
+                    value={companyInfo.logo} 
+                    onChange={(e) => setCompanyInfo({...companyInfo, logo: e.target.value})} 
+                    className="w-full px-2 py-1.5 border rounded text-sm" 
+                    placeholder="https://example.com/logo.png"
+                  />
+                  {companyInfo.logo && (
+                    <div className="mt-2 p-2 bg-gray-50 rounded">
+                      <img src={companyInfo.logo} alt="Company Logo" className="h-16 object-contain" />
+                    </div>
+                  )}
+                </div>
+                <button 
+                  onClick={() => { 
+                    localStorage.setItem('tilingCompanyInfo', JSON.stringify(companyInfo)); 
+                    alert('Company info saved!'); 
+                  }} 
+                  className={`w-full px-3 py-2 ${theme.primary} text-white rounded text-sm`}
+                >
+                  Save Company Info
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <h2 className="text-lg font-semibold mb-3">Color Theme</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {Object.entries(themes).map(([key, t]) => (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      setCurrentTheme(key);
+                      localStorage.setItem('tilingTheme', key);
+                    }}
+                    className={`p-4 rounded border-2 ${currentTheme === key ? `${t.border} ${t.secondary}` : 'border-gray-200'}`}
+                  >
+                    <div className={`w-full h-8 rounded mb-2 ${t.primary}`}></div>
+                    <div className="text-sm font-medium">{t.name}</div>
+                    {currentTheme === key && <div className={`text-xs ${t.text} mt-1`}>✓ Active</div>}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         )}
