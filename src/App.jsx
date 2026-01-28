@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calculator, FileText, PoundSterling, MessageCircle, Mail, Download, Save, FolderOpen, Users, Camera, X, Search, Settings } from 'lucide-react';
+import { Plus, Trash2, Calculator, FileText, PoundSterling, MessageCircle, Mail, Download, Save, FolderOpen, Users, Camera, X, Search, Settings, HelpCircle } from 'lucide-react';
 
 export default function TilingEstimator() {
   const [page, setPage] = useState('estimate');
@@ -152,10 +152,11 @@ export default function TilingEstimator() {
           </div>
         )}
         <div className="bg-white rounded shadow mb-4">
-          <div className="flex border-b">
-            {[['estimate', Calculator], ['pricing', PoundSterling], ['quote', FileText], ['settings', Settings]].map(([p, Icon]) => (
-              <button key={p} onClick={() => setPage(p)} className={`flex-1 px-4 py-3 ${page === p ? `${theme.text} border-b-2 ${theme.primary.replace('bg-', 'border-')}` : ''}`}>
-                <Icon className="w-5 h-5 inline mr-2" />{p.charAt(0).toUpperCase() + p.slice(1)}
+          <div className="flex border-b overflow-x-auto">
+            {[['estimate', Calculator], ['pricing', PoundSterling], ['quote', FileText], ['settings', Settings], ['help', HelpCircle]].map(([p, Icon]) => (
+              <button key={p} onClick={() => setPage(p)} className={`flex-1 min-w-[80px] px-2 sm:px-4 py-3 ${page === p ? `${theme.text} border-b-2 ${theme.primary.replace('bg-', 'border-')}` : ''}`}>
+                <Icon className="w-4 h-4 sm:w-5 sm:h-5 inline mr-1 sm:mr-2" />
+                <span className="text-xs sm:text-base">{p.charAt(0).toUpperCase() + p.slice(1)}</span>
               </button>
             ))}
           </div>
@@ -577,6 +578,132 @@ ${rooms.filter(r => r.notes).map(r => `${r.name}: ${r.notes}${r.notesPrice ? ` (
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {page === 'help' && (
+          <div className="bg-white rounded shadow p-4">
+            <h1 className="text-2xl font-bold mb-4">How to Use This App</h1>
+            
+            <div className="space-y-6 text-sm">
+              <section>
+                <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                  <Calculator className="w-5 h-5" />
+                  Creating an Estimate
+                </h2>
+                <ol className="list-decimal list-inside space-y-2 ml-2">
+                  <li><strong>Customer Details:</strong> Enter customer name, address, phone, and email. Use the address search to find UK addresses quickly.</li>
+                  <li><strong>Add Rooms:</strong> Click "Add" to create multiple rooms. Each room can be customized separately.</li>
+                  <li><strong>Room Dimensions:</strong> Enter length and width in meters. Area is calculated automatically.</li>
+                  <li><strong>Surface Type:</strong> Choose Floor or Wall to show relevant options.</li>
+                  <li><strong>Trowel Size:</strong> Select 3mm, 6mm, 10mm, or 12mm (default: 10mm).</li>
+                </ol>
+              </section>
+
+              <section>
+                <h2 className="text-lg font-semibold mb-2">Floor Options</h2>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li><strong>Cement Board:</strong> Adds boards + 2kg/m² adhesive for bonding</li>
+                  <li><strong>Anti-Crack Membrane:</strong> Adds membrane + 2kg/m² adhesive</li>
+                  <li><strong>Leveling Compound:</strong> Choose depth (2mm, 3mm, or 4mm) - bags calculated automatically</li>
+                </ul>
+              </section>
+
+              <section>
+                <h2 className="text-lg font-semibold mb-2">Additional Options</h2>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li><strong>Natural Stone:</strong> Auto-calculates stone sealer (2 coats, 10m² per bottle)</li>
+                  <li><strong>Tile Trim:</strong> Enter length in meters (sold in 2.5m lengths)</li>
+                  <li><strong>Sealant:</strong> Specify number of silicone tubes needed</li>
+                  <li><strong>Advanced Grout Calc:</strong> Uses tile dimensions for precise grout quantity</li>
+                  <li><strong>Job Photos:</strong> Take/upload photos directly from your phone for reference</li>
+                  <li><strong>Room Notes:</strong> Add special instructions and optional extra costs per room</li>
+                </ul>
+              </section>
+
+              <section>
+                <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                  <PoundSterling className="w-5 h-5" />
+                  Labour Pricing
+                </h2>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li><strong>Per m²:</strong> Set rate per square meter (e.g., £50/m²)</li>
+                  <li><strong>Day Rate:</strong> Set daily rate and estimate number of days</li>
+                  <li><strong>Prep Work:</strong> Optional - add hourly rate and estimated hours</li>
+                </ul>
+              </section>
+
+              <section>
+                <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                  <PoundSterling className="w-5 h-5" />
+                  Pricing Setup
+                </h2>
+                <p className="mb-2">Go to the <strong>Pricing</strong> tab to set default prices for:</p>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li>Adhesive, Grout, Cement Board, Anti-Crack, Tanking</li>
+                  <li>Tile Trim, Leveling Compound, Stone Sealer, Sealant</li>
+                  <li>Waste Percentage (10-30%, typically 20%)</li>
+                  <li>Profit Margin (% markup on materials)</li>
+                </ul>
+                <p className="mt-2 text-xs text-gray-600">💡 Tip: Click "Save Prices" to keep your defaults for future quotes</p>
+              </section>
+
+              <section>
+                <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                  <FileText className="w-5 h-5" />
+                  Saving & Sending Quotes
+                </h2>
+                <ol className="list-decimal list-inside space-y-2 ml-2">
+                  <li><strong>Save:</strong> Click "Save" button to store quote (updates if already saved)</li>
+                  <li><strong>Load:</strong> Click "Quotes" to view and load previous quotes</li>
+                  <li><strong>Send:</strong> Go to Quote tab, then click WhatsApp or Email to send detailed quote with:
+                    <ul className="list-disc list-inside ml-6 mt-1 text-xs">
+                      <li>Project overview (rooms, areas, features)</li>
+                      <li>Complete materials breakdown with prices</li>
+                      <li>Labour total</li>
+                      <li>Final quote amount</li>
+                    </ul>
+                  </li>
+                </ol>
+              </section>
+
+              <section>
+                <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+                  <Settings className="w-5 h-5" />
+                  Settings & Customization
+                </h2>
+                <ul className="list-disc list-inside space-y-1 ml-2">
+                  <li><strong>Company Info:</strong> Add your company name and logo URL</li>
+                  <li><strong>Color Themes:</strong> Choose from 6 professional color schemes</li>
+                  <li>Your logo appears on all pages and in quotes</li>
+                </ul>
+              </section>
+
+              <section>
+                <h2 className="text-lg font-semibold mb-2">Quick Tips</h2>
+                <div className="bg-blue-50 p-3 rounded space-y-2 text-xs">
+                  <p>✅ <strong>Save customers separately</strong> - reuse their details for future quotes</p>
+                  <p>✅ <strong>All data saves in your browser</strong> - no internet needed after loading</p>
+                  <p>✅ <strong>Use address search</strong> - saves time and ensures accuracy</p>
+                  <p>✅ <strong>Take photos on-site</strong> - attach to specific rooms for reference</p>
+                  <p>✅ <strong>Check the summary</strong> - review totals before sending quote</p>
+                  <p>✅ <strong>Cement board + Anti-crack</strong> = 4kg/m² extra adhesive total</p>
+                  <p>✅ <strong>Natural stone</strong> automatically adds sealer to materials</p>
+                </div>
+              </section>
+
+              <section>
+                <h2 className="text-lg font-semibold mb-2">Material Coverage Rates</h2>
+                <div className="bg-gray-50 p-3 rounded text-xs space-y-1">
+                  <p><strong>Adhesive (trowel size):</strong> 3mm=8m², 6mm=5.5m², 10mm=3.3m², 12mm=3.3m² per 20kg bag</p>
+                  <p><strong>Cement Board/Anti-Crack:</strong> +2kg/m² adhesive (10m² per 20kg bag)</p>
+                  <p><strong>Leveling Compound:</strong> 2mm=4m², 3mm=2.7m², 4mm=2m² per 20kg bag</p>
+                  <p><strong>Grout:</strong> 2.5kg covers ~1m² (varies with joint width)</p>
+                  <p><strong>Stone Sealer:</strong> 10m² per bottle, 2 coats required</p>
+                  <p><strong>Waste:</strong> All materials include configurable waste allowance (default 20%)</p>
+                </div>
+              </section>
             </div>
           </div>
         )}
