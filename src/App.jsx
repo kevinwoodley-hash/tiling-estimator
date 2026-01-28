@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Calculator, FileText, DollarSign, MessageCircle, Mail, Download, Save, FolderOpen, Users } from 'lucide-react';
+import { Plus, Trash2, Calculator, FileText, PoundSterling, MessageCircle, Mail, Download, Save, FolderOpen, Users, Camera, X, Search } from 'lucide-react';
 
 export default function TilingEstimator() {
   const [page, setPage] = useState('estimate');
   const [customer, setCustomer] = useState({ name: '', address: '', phone: '', email: '' });
-  const [rooms, setRooms] = useState([{ id: 1, name: 'Room 1', length: '', width: '', surfaceType: 'floor', trowelSize: '6', useCementBoard: false, useAntiCrack: false, useTanking: false, useGroutCalc: false, tileWidth: '', tileHeight: '', groutWidth: '3', tileThickness: '10', useTrim: false, trimLength: '', notes: '', notesPrice: '' }]);
+  const [rooms, setRooms] = useState([{ id: 1, name: 'Room 1', length: '', width: '', surfaceType: 'floor', trowelSize: '10', useCementBoard: false, useAntiCrack: false, useTanking: false, useGroutCalc: false, tileWidth: '', tileHeight: '', groutWidth: '3', tileThickness: '10', useTrim: false, trimLength: '', notes: '', notesPrice: '', isNaturalStone: false, photos: [] }]);
+  const [addressSearch, setAddressSearch] = useState('');
+  const [addressResults, setAddressResults] = useState([]);
+  const [searchingAddress, setSearchingAddress] = useState(false);
   const [labour, setLabour] = useState({ type: 'm2', m2Rate: '50', dayRate: '250', daysEstimate: '1', prepWork: false, prepRate: '30', prepHours: '0' });
-  const [pricing, setPricing] = useState({ adhesivePrice: '15', groutPrice: '8', cementBoardPrice: '12', antiCrackPrice: '5', tankingPrice: '35', trimPrice: '8', profitMargin: '20', wastePercentage: '20' });
+  const [pricing, setPricing] = useState({ adhesivePrice: '15', groutPrice: '8', cementBoardPrice: '12', antiCrackPrice: '5', tankingPrice: '35', trimPrice: '8', sealerPrice: '25', profitMargin: '20', wastePercentage: '20' });
   const [savedCustomers, setSavedCustomers] = useState([]);
   const [savedQuotes, setSavedQuotes] = useState([]);
   const [currentQuoteId, setCurrentQuoteId] = useState(null);
@@ -24,8 +27,47 @@ export default function TilingEstimator() {
 
   const adhesiveCoverage = { '3': 8, '6': 5.5, '10': 3.3, '12': 3.3 };
 
+  const searchAddress = async () => {
+    if (!addressSearch.trim()) return;
+    setSearchingAddress(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(addressSearch)}&countrycodes=gb&limit=5`,
+        { headers: { 'User-Agent': 'TilingEstimator/1.0' } }
+      );
+      const data = await response.json();
+      setAddressResults(data);
+    } catch (error) {
+      alert('Address search failed');
+    }
+    setSearchingAddress(false);
+  };
+
+  const handlePhotoCapture = (roomId, event) => {
+    const files = Array.from(event.target.files);
+    const readers = files.map(file => {
+      return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve({ data: e.target.result, name: file.name });
+        reader.readAsDataURL(file);
+      });
+    });
+
+    Promise.all(readers).then(photos => {
+      setRooms(rooms.map(r => 
+        r.id === roomId ? { ...r, photos: [...(r.photos || []), ...photos] } : r
+      ));
+    });
+  };
+
+  const removePhoto = (roomId, photoIndex) => {
+    setRooms(rooms.map(r => 
+      r.id === roomId ? { ...r, photos: r.photos.filter((_, i) => i !== photoIndex) } : r
+    ));
+  };
+
   const calculateTotals = () => {
-    let area = 0, adhesive = 0, grout = 0, cement = 0, antiCrack = 0, tank = 0, trim = 0, notesTotal = 0;
+    let area = 0, adhesive = 0, grout = 0, cement = 0, antiCrack = 0, tank = 0, trim = 0, notesTotal = 0, sealerArea = 0;
     rooms.forEach(r => {
       const a = parseFloat(r.length || 0) * parseFloat(r.width || 0);
       area += a;
@@ -43,51 +85,23 @@ export default function TilingEstimator() {
         }
         if (r.surfaceType === 'wall' && r.useTanking) tank += a / 4;
         if (r.useTrim && r.trimLength) trim += parseFloat(r.trimLength);
+        if (r.isNaturalStone) sealerArea += a;
       }
-      // Add up additional costs from room notes
-      if (r.notesPrice) {
-        notesTotal += parseFloat(r.notesPrice || 0);
-      }
+      if (r.notesPrice) notesTotal += parseFloat(r.notesPrice || 0);
     });
     const adhesiveBags = Math.ceil(adhesive * 1.2);
     const groutBags = Math.ceil((grout / 2.5) * 1.2);
     const cementBoards = Math.ceil(cement * 1.2);
     const tankingTubs = Math.ceil(tank * 1.2);
     const trimLengths = Math.ceil(trim / 2.5);
-    
-    // Calculate labour based on type (m2 or day rate)
-    const labourCost = labour.type === 'm2' 
-      ? area * parseFloat(labour.m2Rate || 0) 
-      : parseFloat(labour.dayRate || 0) * parseFloat(labour.daysEstimate || 1);
-    
-    // Calculate prep work cost
+    const sealerBottles = Math.ceil((sealerArea / 10) * 2); // 2 coats, 10m² per bottle
+    const labourCost = labour.type === 'm2' ? area * parseFloat(labour.m2Rate || 0) : parseFloat(labour.dayRate || 0) * parseFloat(labour.daysEstimate || 0);
     const prepCost = labour.prepWork ? parseFloat(labour.prepRate || 0) * parseFloat(labour.prepHours || 0) : 0;
-    
-    const baseMat = (adhesiveBags * parseFloat(pricing.adhesivePrice || 0)) + (groutBags * parseFloat(pricing.groutPrice || 0)) + (cementBoards * parseFloat(pricing.cementBoardPrice || 0)) + (antiCrack * 1.2 * parseFloat(pricing.antiCrackPrice || 0)) + (tankingTubs * parseFloat(pricing.tankingPrice || 0)) + (trimLengths * parseFloat(pricing.trimPrice || 0));
+    const baseMat = (adhesiveBags * parseFloat(pricing.adhesivePrice || 0)) + (groutBags * parseFloat(pricing.groutPrice || 0)) + (cementBoards * parseFloat(pricing.cementBoardPrice || 0)) + (antiCrack * 1.2 * parseFloat(pricing.antiCrackPrice || 0)) + (tankingTubs * parseFloat(pricing.tankingPrice || 0)) + (trimLengths * parseFloat(pricing.trimPrice || 0)) + (sealerBottles * parseFloat(pricing.sealerPrice || 0));
     const matCost = baseMat * (1 + parseFloat(pricing.profitMargin || 0) / 100);
-    
-    // Total labour includes prep work
     const totalLabourCost = labourCost + prepCost;
-    
-    // Final total includes materials, labour, prep, and additional costs
     const totalCost = matCost + totalLabourCost + notesTotal;
-    
-    return { 
-      totalArea: area.toFixed(2), 
-      adhesiveBags, 
-      groutBags, 
-      cementBoards, 
-      antiCrackMembrane: antiCrack.toFixed(2), 
-      tankingTubs, 
-      trimLengths, 
-      labourCost: labourCost.toFixed(2), 
-      prepCost: prepCost.toFixed(2),
-      totalLabourCost: totalLabourCost.toFixed(2),
-      notesTotal: notesTotal.toFixed(2),
-      materialsCost: matCost.toFixed(2), 
-      profitAmount: (matCost - baseMat).toFixed(2), 
-      totalCost: totalCost.toFixed(2) 
-    };
+    return { totalArea: area.toFixed(2), adhesiveBags, groutBags, cementBoards, antiCrackMembrane: antiCrack.toFixed(2), tankingTubs, trimLengths, sealerBottles, sealerArea: sealerArea.toFixed(2), labourCost: labourCost.toFixed(2), prepCost: prepCost.toFixed(2), totalLabourCost: totalLabourCost.toFixed(2), notesTotal: notesTotal.toFixed(2), materialsCost: matCost.toFixed(2), profitAmount: (matCost - baseMat).toFixed(2), totalCost: totalCost.toFixed(2) };
   };
 
   const totals = calculateTotals();
@@ -97,7 +111,7 @@ export default function TilingEstimator() {
       <div className="max-w-6xl mx-auto">
         <div className="bg-white rounded shadow mb-4">
           <div className="flex border-b">
-            {[['estimate', Calculator], ['pricing', DollarSign], ['quote', FileText]].map(([p, Icon]) => (
+            {[['estimate', Calculator], ['pricing', PoundSterling], ['quote', FileText]].map(([p, Icon]) => (
               <button key={p} onClick={() => setPage(p)} className={`flex-1 px-4 py-3 ${page === p ? 'text-blue-600 border-b-2 border-blue-600' : ''}`}>
                 <Icon className="w-5 h-5 inline mr-2" />{p.charAt(0).toUpperCase() + p.slice(1)}
               </button>
@@ -106,7 +120,7 @@ export default function TilingEstimator() {
         </div>
 
         <div className="bg-white rounded shadow p-3 mb-4 flex gap-2">
-          <button onClick={() => { setCustomer({ name: '', address: '', phone: '', email: '' }); setRooms([{ id: 1, name: 'Room 1', length: '', width: '', surfaceType: 'floor', trowelSize: '6', useCementBoard: false, useAntiCrack: false, useTanking: false, useGroutCalc: false, tileWidth: '', tileHeight: '', groutWidth: '3', tileThickness: '10', useTrim: false, trimLength: '', notes: '', notesPrice: '' }]); setCurrentQuoteId(null); }} className="px-3 py-2 bg-green-600 text-white rounded text-sm">
+          <button onClick={() => { setCustomer({ name: '', address: '', phone: '', email: '' }); setRooms([{ id: 1, name: 'Room 1', length: '', width: '', surfaceType: 'floor', trowelSize: '10', useCementBoard: false, useAntiCrack: false, useTanking: false, useGroutCalc: false, tileWidth: '', tileHeight: '', groutWidth: '3', tileThickness: '10', useTrim: false, trimLength: '', notes: '', notesPrice: '', isNaturalStone: false, photos: [] }]); setCurrentQuoteId(null); }} className="px-3 py-2 bg-green-600 text-white rounded text-sm">
             <Plus className="w-4 h-4 inline mr-1" />New
           </button>
           <button onClick={() => { if (!customer.name) return alert('Enter name'); const q = { id: currentQuoteId || Date.now(), customer, rooms, labour, pricing, totals, date: new Date().toISOString() }; const u = currentQuoteId ? savedQuotes.map(sq => sq.id === currentQuoteId ? q : sq) : [...savedQuotes, q]; setSavedQuotes(u); localStorage.setItem('tilingQuotes', JSON.stringify(u)); if (!currentQuoteId) setCurrentQuoteId(q.id); alert('Saved!'); }} className="px-3 py-2 bg-blue-600 text-white rounded text-sm">
@@ -128,7 +142,7 @@ export default function TilingEstimator() {
                 <div><div className="font-medium text-sm">{q.customer.name}</div><div className="text-xs text-gray-600">£{q.totals.totalCost}</div></div>
                 <div className="flex gap-2">
                   <button onClick={() => { setCustomer(q.customer); setRooms(q.rooms); setLabour(q.labour); setPricing(q.pricing); setCurrentQuoteId(q.id); setShowQuoteList(false); setPage('estimate'); }} className="px-2 py-1 bg-blue-600 text-white rounded text-xs">Load</button>
-                  <button onClick={() => { if (confirm('Delete?')) { const u = savedQuotes.filter(sq => sq.id !== q.id); setSavedQuotes(u); localStorage.setItem('tilingQuotes', JSON.stringify(u)); }}} className="px-2 py-1 bg-red-600 text-white rounded text-xs">Delete</button>
+                  <button onClick={() => { if (confirm('Delete?')) { const u = savedQuotes.filter(sq => sq.id !== q.id); setSavedQuotes(u); localStorage.setItem('tilingQuotes', JSON.stringify(u)); if (currentQuoteId === q.id) setCurrentQuoteId(null); }}} className="px-2 py-1 bg-red-600 text-white rounded text-xs">Del</button>
                 </div>
               </div>
             ))}
@@ -137,13 +151,13 @@ export default function TilingEstimator() {
 
         {showCustomerList && (
           <div className="bg-white rounded shadow p-4 mb-4">
-            <h2 className="font-bold mb-3">Saved Customers</h2>
+            <h2 className="font-bold mb-3">Customers</h2>
             {savedCustomers.map(c => (
               <div key={c.id} className="flex justify-between p-2 bg-gray-50 rounded mb-2">
-                <div><div className="font-medium text-sm">{c.name}</div><div className="text-xs text-gray-600">{c.phone}</div></div>
+                <div><div className="font-medium text-sm">{c.name}</div><div className="text-xs">{c.phone}</div></div>
                 <div className="flex gap-2">
                   <button onClick={() => { setCustomer(c); setShowCustomerList(false); }} className="px-2 py-1 bg-blue-600 text-white rounded text-xs">Load</button>
-                  <button onClick={() => { if (confirm('Delete?')) { const u = savedCustomers.filter(sc => sc.id !== c.id); setSavedCustomers(u); localStorage.setItem('tilingCustomers', JSON.stringify(u)); }}} className="px-2 py-1 bg-red-600 text-white rounded text-xs">Delete</button>
+                  <button onClick={() => { if (confirm('Delete?')) { const u = savedCustomers.filter(sc => sc.id !== c.id); setSavedCustomers(u); localStorage.setItem('tilingCustomers', JSON.stringify(u)); }}} className="px-2 py-1 bg-red-600 text-white rounded text-xs">Del</button>
                 </div>
               </div>
             ))}
@@ -151,185 +165,124 @@ export default function TilingEstimator() {
         )}
 
         {page === 'estimate' && (
-          <div className="space-y-4">
-            <div className="bg-white rounded shadow p-4">
-              <h2 className="font-semibold mb-3">Customer Details</h2>
-              <div className="grid gap-3">
-                <div><label className="block text-sm mb-1">Name</label><input type="text" value={customer.name} onChange={(e) => setCustomer({...customer, name: e.target.value})} className="w-full px-2 py-1.5 border rounded" /></div>
-                <div><label className="block text-sm mb-1">Address</label><input type="text" value={customer.address} onChange={(e) => setCustomer({...customer, address: e.target.value})} className="w-full px-2 py-1.5 border rounded" /></div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div><label className="block text-sm mb-1">Phone</label><input type="tel" value={customer.phone} onChange={(e) => setCustomer({...customer, phone: e.target.value})} className="w-full px-2 py-1.5 border rounded" /></div>
-                  <div><label className="block text-sm mb-1">Email</label><input type="email" value={customer.email} onChange={(e) => setCustomer({...customer, email: e.target.value})} className="w-full px-2 py-1.5 border rounded" /></div>
-                </div>
-                <button onClick={() => { if (!customer.name) return alert('Enter name'); const c = {...customer, id: Date.now()}; const u = [...savedCustomers, c]; setSavedCustomers(u); localStorage.setItem('tilingCustomers', JSON.stringify(u)); alert('Customer saved!'); }} className="px-3 py-2 bg-orange-600 text-white rounded text-sm w-full">Save Customer</button>
+          <div className="bg-white rounded shadow p-4">
+            <h1 className="text-2xl font-bold mb-4">Estimate</h1>
+            <div className="mb-6">
+              <div className="flex justify-between mb-3">
+                <h2 className="text-lg font-semibold">Customer</h2>
+                <button onClick={() => { if (!customer.name) return alert('Enter name'); setSavedCustomers([...savedCustomers, { ...customer, id: Date.now() }]); localStorage.setItem('tilingCustomers', JSON.stringify([...savedCustomers, { ...customer, id: Date.now() }])); alert('Saved!'); }} className="px-2 py-1 bg-green-600 text-white rounded text-xs">Save</button>
               </div>
-            </div>
-
-            <div className="bg-white rounded shadow p-4">
-              <h2 className="font-semibold mb-3">Labour Pricing</h2>
               <div className="space-y-3">
+                <div><label className="block text-xs mb-1">Name</label><input type="text" value={customer.name} onChange={(e) => setCustomer({...customer, name: e.target.value})} className="w-full px-2 py-1.5 border rounded text-sm" /></div>
                 <div>
-                  <label className="block text-sm mb-2">Pricing Method</label>
-                  <div className="flex gap-4">
-                    <label className="flex items-center gap-2">
-                      <input 
-                        type="radio" 
-                        checked={labour.type === 'm2'} 
-                        onChange={() => setLabour({...labour, type: 'm2'})} 
-                      />
-                      <span className="text-sm">Per m²</span>
-                    </label>
-                    <label className="flex items-center gap-2">
-                      <input 
-                        type="radio" 
-                        checked={labour.type === 'day'} 
-                        onChange={() => setLabour({...labour, type: 'day'})} 
-                      />
-                      <span className="text-sm">Day Rate</span>
-                    </label>
-                  </div>
-                </div>
-
-                {labour.type === 'm2' ? (
-                  <div>
-                    <label className="block text-sm mb-1">Rate per m²</label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">£</span>
-                      <input 
-                        type="number" 
-                        step="0.01" 
-                        value={labour.m2Rate} 
-                        onChange={(e) => setLabour({...labour, m2Rate: e.target.value})} 
-                        className="w-full px-2 py-1.5 border rounded" 
-                      />
-                    </div>
-                    <p className="text-xs text-gray-600 mt-1">Total area: {totals.totalArea}m² = £{totals.labourCost}</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm mb-1">Day Rate</label>
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm">£</span>
-                        <input 
-                          type="number" 
-                          step="0.01" 
-                          value={labour.dayRate} 
-                          onChange={(e) => setLabour({...labour, dayRate: e.target.value})} 
-                          className="w-full px-2 py-1.5 border rounded" 
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm mb-1">Estimated Days</label>
-                      <input 
-                        type="number" 
-                        step="0.5" 
-                        value={labour.daysEstimate} 
-                        onChange={(e) => setLabour({...labour, daysEstimate: e.target.value})} 
-                        className="w-full px-2 py-1.5 border rounded" 
-                      />
-                      <p className="text-xs text-gray-600 mt-1">{labour.daysEstimate} days × £{labour.dayRate} = £{totals.labourCost}</p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="pt-3 border-t">
-                  <label className="flex items-center gap-2 mb-2">
+                  <label className="block text-xs mb-1">Address</label>
+                  <div className="flex gap-2 mb-2">
                     <input 
-                      type="checkbox" 
-                      checked={labour.prepWork} 
-                      onChange={(e) => setLabour({...labour, prepWork: e.target.checked})} 
+                      type="text" 
+                      value={addressSearch} 
+                      onChange={(e) => setAddressSearch(e.target.value)}
+                      onKeyPress={(e) => e.key === 'Enter' && searchAddress()}
+                      placeholder="Search UK address..." 
+                      className="flex-1 px-2 py-1.5 border rounded text-sm" 
                     />
-                    <span className="text-sm">Add Prep Work</span>
-                  </label>
-                  {labour.prepWork && (
-                    <div className="bg-blue-50 p-3 rounded space-y-2">
-                      <div>
-                        <label className="block text-xs mb-1">Hourly Rate (£)</label>
-                        <input 
-                          type="number" 
-                          step="0.01" 
-                          value={labour.prepRate} 
-                          onChange={(e) => setLabour({...labour, prepRate: e.target.value})} 
-                          className="w-full px-2 py-1 border rounded text-sm" 
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs mb-1">Estimated Hours</label>
-                        <input 
-                          type="number" 
-                          step="0.5" 
-                          value={labour.prepHours} 
-                          onChange={(e) => setLabour({...labour, prepHours: e.target.value})} 
-                          className="w-full px-2 py-1 border rounded text-sm" 
-                        />
-                      </div>
-                      <p className="text-xs text-gray-600">Total prep: £{totals.prepCost}</p>
+                    <button 
+                      onClick={searchAddress}
+                      disabled={searchingAddress}
+                      className="px-3 py-1.5 bg-blue-600 text-white rounded text-xs flex items-center gap-1"
+                    >
+                      <Search className="w-4 h-4" />
+                      {searchingAddress ? 'Searching...' : 'Search'}
+                    </button>
+                  </div>
+                  {addressResults.length > 0 && (
+                    <div className="border rounded mb-2 max-h-40 overflow-y-auto">
+                      {addressResults.map((result, idx) => (
+                        <div 
+                          key={idx}
+                          onClick={() => {
+                            setCustomer({...customer, address: result.display_name});
+                            setAddressSearch('');
+                            setAddressResults([]);
+                          }}
+                          className="p-2 hover:bg-blue-50 cursor-pointer border-b last:border-b-0 text-xs"
+                        >
+                          {result.display_name}
+                        </div>
+                      ))}
                     </div>
                   )}
+                  <input 
+                    type="text" 
+                    value={customer.address} 
+                    onChange={(e) => setCustomer({...customer, address: e.target.value})} 
+                    placeholder="Or type address manually"
+                    className="w-full px-2 py-1.5 border rounded text-sm" 
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div><label className="block text-xs mb-1">Phone</label><input type="text" value={customer.phone} onChange={(e) => setCustomer({...customer, phone: e.target.value})} className="w-full px-2 py-1.5 border rounded text-sm" /></div>
+                  <div><label className="block text-xs mb-1">Email</label><input type="text" value={customer.email} onChange={(e) => setCustomer({...customer, email: e.target.value})} className="w-full px-2 py-1.5 border rounded text-sm" /></div>
                 </div>
               </div>
             </div>
 
-            <div className="bg-white rounded shadow p-4">
-              <div className="flex justify-between items-center mb-3">
-                <h2 className="font-semibold">Rooms</h2>
-                <button onClick={() => setRooms([...rooms, { id: Date.now(), name: `Room ${rooms.length + 1}`, length: '', width: '', surfaceType: 'floor', trowelSize: '6', useCementBoard: false, useAntiCrack: false, useTanking: false, useGroutCalc: false, tileWidth: '', tileHeight: '', groutWidth: '3', tileThickness: '10', useTrim: false, trimLength: '', notes: '', notesPrice: '' }])} className="px-3 py-1.5 bg-blue-600 text-white rounded text-sm">
-                  <Plus className="w-4 h-4 inline mr-1" />Add Room
-                </button>
+            <div className="mb-6">
+              <div className="flex justify-between mb-3">
+                <h2 className="text-lg font-semibold">Rooms</h2>
+                <button onClick={() => setRooms([...rooms, { id: rooms.length + 1, name: `Room ${rooms.length + 1}`, length: '', width: '', surfaceType: 'floor', trowelSize: '10', useCementBoard: false, useAntiCrack: false, useTanking: false, useGroutCalc: false, tileWidth: '', tileHeight: '', groutWidth: '3', tileThickness: '10', useTrim: false, trimLength: '', notes: '', notesPrice: '', isNaturalStone: false, photos: [] }])} className="px-2 py-1 bg-blue-600 text-white rounded text-xs">Add</button>
               </div>
               {rooms.map(r => (
-                <div key={r.id} className="border rounded p-3 mb-3 bg-gray-50">
+                <div key={r.id} className="bg-gray-50 p-3 rounded mb-3">
                   <div className="flex justify-between mb-2">
-                    <input type="text" value={r.name} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, name: e.target.value} : rm))} className="font-medium px-2 py-1 border rounded text-sm" />
-                    {rooms.length > 1 && <button onClick={() => setRooms(rooms.filter(rm => rm.id !== r.id))} className="text-red-600"><Trash2 className="w-4 h-4" /></button>}
+                    <input value={r.name} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, name: e.target.value} : rm))} className="px-2 py-1 border rounded text-sm" />
+                    {rooms.length > 1 && <button onClick={() => setRooms(rooms.filter(rm => rm.id !== r.id))}><Trash2 className="w-4 h-4 text-red-600" /></button>}
                   </div>
-                  <div className="grid grid-cols-2 gap-2 mb-2">
-                    <div><label className="text-xs">Length (m)</label><input type="number" step="0.01" value={r.length} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, length: e.target.value} : rm))} className="w-full px-2 py-1 border rounded text-sm" /></div>
-                    <div><label className="text-xs">Width (m)</label><input type="number" step="0.01" value={r.width} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, width: e.target.value} : rm))} className="w-full px-2 py-1 border rounded text-sm" /></div>
+                  <div className="grid grid-cols-3 gap-2 mb-2">
+                    <div><label className="text-xs">Length</label><input type="number" step="0.01" value={r.length} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, length: e.target.value} : rm))} className="w-full px-2 py-1 border rounded text-sm" /></div>
+                    <div><label className="text-xs">Width</label><input type="number" step="0.01" value={r.width} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, width: e.target.value} : rm))} className="w-full px-2 py-1 border rounded text-sm" /></div>
+                    <div><label className="text-xs">Area</label><input value={(parseFloat(r.length || 0) * parseFloat(r.width || 0)).toFixed(2)} disabled className="w-full px-2 py-1 border rounded bg-gray-100 text-sm" /></div>
                   </div>
-                  <div className="mb-2">
-                    <label className="text-xs">Surface</label>
-                    <select value={r.surfaceType} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, surfaceType: e.target.value} : rm))} className="w-full px-2 py-1 border rounded text-sm">
-                      <option value="floor">Floor</option>
-                      <option value="wall">Wall</option>
-                    </select>
-                  </div>
-                  <div className="mb-2">
-                    <label className="text-xs">Trowel Size</label>
-                    <select value={r.trowelSize} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, trowelSize: e.target.value} : rm))} className="w-full px-2 py-1 border rounded text-sm">
-                      <option value="3">3mm</option>
-                      <option value="6">6mm</option>
-                      <option value="10">10mm</option>
-                      <option value="12">12mm</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    {r.surfaceType === 'floor' && (
-                      <>
-                        <label className="flex items-center gap-2 text-xs">
-                          <input type="checkbox" checked={r.useCementBoard} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, useCementBoard: e.target.checked} : rm))} />
-                          Cement Board
-                        </label>
-                        <label className="flex items-center gap-2 text-xs">
-                          <input type="checkbox" checked={r.useAntiCrack} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, useAntiCrack: e.target.checked} : rm))} />
-                          Anti-Crack Membrane
-                        </label>
-                      </>
-                    )}
-                    {r.surfaceType === 'wall' && (
-                      <label className="flex items-center gap-2 text-xs">
-                        <input type="checkbox" checked={r.useTanking} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, useTanking: e.target.checked} : rm))} />
-                        Tanking
+                  <div className="flex gap-4 mb-2">
+                    {['floor', 'wall'].map(t => (
+                      <label key={t} className="flex items-center gap-1 text-sm">
+                        <input type="radio" checked={r.surfaceType === t} onChange={() => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, surfaceType: t} : rm))} />
+                        {t}
                       </label>
-                    )}
-                    <label className="flex items-center gap-2 text-xs">
+                    ))}
+                  </div>
+                  {r.surfaceType === 'floor' && (
+                    <div className="bg-blue-50 p-2 rounded text-xs space-y-1 mb-2">
+                      <label className="flex items-center gap-1">
+                        <input type="checkbox" checked={r.useCementBoard} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, useCementBoard: e.target.checked} : rm))} />
+                        Cement Board (0.76m² per board)
+                      </label>
+                      <label className="flex items-center gap-1">
+                        <input type="checkbox" checked={r.useAntiCrack} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, useAntiCrack: e.target.checked} : rm))} />
+                        Anti-Crack Membrane
+                      </label>
+                    </div>
+                  )}
+                  {r.surfaceType === 'wall' && (
+                    <div className="bg-green-50 p-2 rounded text-xs space-y-1 mb-2">
+                      <label className="flex items-center gap-1">
+                        <input type="checkbox" checked={r.useTanking} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, useTanking: e.target.checked} : rm))} />
+                        Tanking Membrane (4m² per tub)
+                      </label>
+                    </div>
+                  )}
+                  <div className="mb-2">
+                    <label className="block text-xs mb-1">Trowel Size</label>
+                    <select value={r.trowelSize} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, trowelSize: e.target.value} : rm))} className="w-full px-2 py-1 border rounded text-sm">
+                      {[['3', '3mm'], ['6', '6mm'], ['10', '10mm'], ['12', '12mm']].map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                    </select>
+                  </div>
+                  <div className="mt-2 pt-2 border-t">
+                    <label className="flex items-center gap-2 text-xs mb-2">
                       <input type="checkbox" checked={r.useGroutCalc} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, useGroutCalc: e.target.checked} : rm))} />
-                      Advanced Grout Calculation
+                      Calculate Grout by Tile Size
                     </label>
                     {r.useGroutCalc && (
-                      <div className="bg-yellow-50 p-2 rounded">
+                      <div className="bg-yellow-50 p-2 rounded space-y-2">
                         <div className="grid grid-cols-2 gap-2">
                           <div><label className="text-xs">Tile W (mm)</label><input type="number" value={r.tileWidth} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, tileWidth: e.target.value} : rm))} className="w-full px-2 py-1 border rounded text-sm" placeholder="600" /></div>
                           <div><label className="text-xs">Tile H (mm)</label><input type="number" value={r.tileHeight} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, tileHeight: e.target.value} : rm))} className="w-full px-2 py-1 border rounded text-sm" placeholder="600" /></div>
@@ -349,6 +302,55 @@ export default function TilingEstimator() {
                         <label className="text-xs">Trim Length (m)</label>
                         <input type="number" step="0.1" value={r.trimLength} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, trimLength: e.target.value} : rm))} className="w-full px-2 py-1 border rounded text-sm" placeholder="meters" />
                         <p className="text-xs text-gray-600 mt-1">2.5m @ £{pricing.trimPrice}</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-2 pt-2 border-t">
+                    <label className="flex items-center gap-2 text-xs mb-2">
+                      <input type="checkbox" checked={r.isNaturalStone} onChange={(e) => setRooms(rooms.map(rm => rm.id === r.id ? {...rm, isNaturalStone: e.target.checked} : rm))} />
+                      Natural Stone (requires sealer)
+                    </label>
+                    {r.isNaturalStone && (
+                      <div className="bg-amber-50 p-2 rounded">
+                        <p className="text-xs text-amber-800">Sealer required: {Math.ceil((parseFloat(r.length || 0) * parseFloat(r.width || 0) / 10) * 2)} bottles (2 coats, 10m² per bottle)</p>
+                      </div>
+                    )}
+                  </div>
+                  <div className="mt-2 pt-2 border-t">
+                    <label className="text-xs mb-1 block">Job Photos</label>
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      capture="environment"
+                      multiple
+                      onChange={(e) => handlePhotoCapture(r.id, e)}
+                      className="hidden"
+                      id={`photo-${r.id}`}
+                    />
+                    <label 
+                      htmlFor={`photo-${r.id}`}
+                      className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 text-white rounded text-xs cursor-pointer"
+                    >
+                      <Camera className="w-4 h-4" />
+                      Take/Upload Photos
+                    </label>
+                    {r.photos && r.photos.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2 mt-2">
+                        {r.photos.map((photo, idx) => (
+                          <div key={idx} className="relative">
+                            <img 
+                              src={photo.data} 
+                              alt={`Room photo ${idx + 1}`} 
+                              className="w-full h-20 object-cover rounded border"
+                            />
+                            <button 
+                              onClick={() => removePhoto(r.id, idx)}
+                              className="absolute top-0 right-0 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center"
+                            >
+                              <X className="w-3 h-3" />
+                            </button>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -375,11 +377,10 @@ export default function TilingEstimator() {
                 {parseFloat(totals.antiCrackMembrane) > 0 && <div className="bg-white p-2 rounded"><div className="text-xs text-gray-600">Anti-Crack</div><div className="font-bold">{totals.antiCrackMembrane}m²</div></div>}
                 {totals.tankingTubs > 0 && <div className="bg-white p-2 rounded"><div className="text-xs text-gray-600">Tanking</div><div className="font-bold">{totals.tankingTubs} tubs</div></div>}
                 {totals.trimLengths > 0 && <div className="bg-white p-2 rounded"><div className="text-xs text-gray-600">Trim</div><div className="font-bold">{totals.trimLengths} x 2.5m</div></div>}
+                {totals.sealerBottles > 0 && <div className="bg-white p-2 rounded"><div className="text-xs text-gray-600">Stone Sealer</div><div className="font-bold">{totals.sealerBottles} bottles</div></div>}
                 {parseFloat(totals.prepCost) > 0 && <div className="bg-white p-2 rounded"><div className="text-xs text-gray-600">Prep Work</div><div className="font-bold">£{totals.prepCost}</div></div>}
                 {parseFloat(totals.notesTotal) > 0 && <div className="bg-white p-2 rounded"><div className="text-xs text-gray-600">Extra Work</div><div className="font-bold">£{totals.notesTotal}</div></div>}
-                <div className="bg-white p-2 rounded"><div className="text-xs text-gray-600">Materials</div><div className="font-bold">£{totals.materialsCost}</div></div>
-                <div className="bg-white p-2 rounded"><div className="text-xs text-gray-600">Labour</div><div className="font-bold">£{totals.totalLabourCost}</div></div>
-                <div className="bg-white p-2 rounded col-span-2"><div className="text-xs text-gray-600">Total</div><div className="font-bold text-green-600 text-lg">£{totals.totalCost}</div></div>
+                <div className="bg-white p-2 rounded"><div className="text-xs text-gray-600">Total</div><div className="font-bold text-green-600">£{totals.totalCost}</div></div>
               </div>
             </div>
           </div>
@@ -392,7 +393,7 @@ export default function TilingEstimator() {
               <button onClick={() => { localStorage.setItem('tilingPricing', JSON.stringify(pricing)); alert('Saved!'); }} className="px-3 py-2 bg-green-600 text-white rounded text-sm">Save Prices</button>
             </div>
             <div className="space-y-3">
-              {[['adhesivePrice', 'Adhesive (20kg)'], ['groutPrice', 'Grout (2.5kg)'], ['cementBoardPrice', 'Cement Board'], ['antiCrackPrice', 'Anti-Crack (m²)'], ['tankingPrice', 'Tanking (tub)'], ['trimPrice', 'Tile Trim (2.5m)'], ['wastePercentage', 'Waste % (10-30)'], ['profitMargin', 'Profit Margin (%)']].map(([k, l]) => (
+              {[['adhesivePrice', 'Adhesive (20kg)'], ['groutPrice', 'Grout (2.5kg)'], ['cementBoardPrice', 'Cement Board'], ['antiCrackPrice', 'Anti-Crack (m²)'], ['tankingPrice', 'Tanking (tub)'], ['trimPrice', 'Tile Trim (2.5m)'], ['sealerPrice', 'Stone Sealer (bottle)'], ['wastePercentage', 'Waste % (10-30)'], ['profitMargin', 'Profit Margin (%)']].map(([k, l]) => (
                 <div key={k}><label className="block text-sm mb-1">{l}</label><input type="number" step="0.01" value={pricing[k]} onChange={(e) => setPricing({...pricing, [k]: e.target.value})} className="w-full px-2 py-1.5 border rounded" /></div>
               ))}
             </div>
@@ -408,10 +409,10 @@ Phone: ${customer.phone}
 Total Area: ${totals.totalArea}m²
 Adhesive: ${totals.adhesiveBags} bags @ £${pricing.adhesivePrice}
 Grout: ${totals.groutBags} bags @ £${pricing.groutPrice}
-${totals.cementBoards > 0 ? `Cement Boards: ${totals.cementBoards} @ £${pricing.cementBoardPrice}\n` : ''}${parseFloat(totals.antiCrackMembrane) > 0 ? `Anti-Crack: ${totals.antiCrackMembrane}m² @ £${pricing.antiCrackPrice}\n` : ''}${totals.tankingTubs > 0 ? `Tanking: ${totals.tankingTubs} tubs @ £${pricing.tankingPrice}\n` : ''}${totals.trimLengths > 0 ? `Tile Trim: ${totals.trimLengths} x 2.5m @ £${pricing.trimPrice}\n` : ''}
+${totals.cementBoards > 0 ? `Cement Boards: ${totals.cementBoards} @ £${pricing.cementBoardPrice}\n` : ''}${parseFloat(totals.antiCrackMembrane) > 0 ? `Anti-Crack: ${totals.antiCrackMembrane}m² @ £${pricing.antiCrackPrice}\n` : ''}${totals.tankingTubs > 0 ? `Tanking: ${totals.tankingTubs} tubs @ £${pricing.tankingPrice}\n` : ''}${totals.trimLengths > 0 ? `Tile Trim: ${totals.trimLengths} x 2.5m @ £${pricing.trimPrice}\n` : ''}${totals.sealerBottles > 0 ? `Stone Sealer: ${totals.sealerBottles} bottles @ £${pricing.sealerPrice}\n` : ''}
 Materials: £${totals.materialsCost}
-${labour.type === 'm2' ? `Tiling Labour: ${totals.totalArea}m² @ £${labour.m2Rate}/m² = £${totals.labourCost}` : `Tiling Labour: ${labour.daysEstimate} days @ £${labour.dayRate}/day = £${totals.labourCost}`}
-${parseFloat(totals.prepCost) > 0 ? `Prep Work: ${labour.prepHours} hours @ £${labour.prepRate}/hr = £${totals.prepCost}\n` : ''}${parseFloat(totals.notesTotal) > 0 ? `Extra Work: £${totals.notesTotal}\n` : ''}Total Labour: £${totals.totalLabourCost}
+Tiling Labour: £${totals.labourCost}
+${parseFloat(totals.prepCost) > 0 ? `Prep Work: £${totals.prepCost}\n` : ''}${parseFloat(totals.notesTotal) > 0 ? `Extra Work: £${totals.notesTotal}\n` : ''}Total Labour: £${totals.totalLabourCost}
 
 TOTAL: £${totals.totalCost}
 
