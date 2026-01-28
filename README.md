@@ -79,7 +79,7 @@ A professional tiling estimation and quoting application built for contractors. 
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/YOUR_USERNAME/tiling-estimator.git
+git clone https://github.com/kevinwoodley/tiling-estimator.git
 cd tiling-estimator
 ```
 
@@ -263,8 +263,8 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 👤 Author
 
-**Your Name**
-- GitHub: [@yourusername](https://github.com/yourusername)
+**Kevin Woodley**
+- GitHub: [@kevinwoodley](https://github.com/yourusername)
 
 ## 🙏 Acknowledgments
 
@@ -276,7 +276,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 For issues, questions, or suggestions:
 - Open an issue on GitHub
-- Contact: your.email@example.com
+- Contact: kevin.woodley@gmail.com
 
 ## 🔒 Privacy
 
