@@ -165,16 +165,13 @@ export default function TilingEstimator() {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded shadow p-4 mb-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {companyInfo.logo ? (
-              <img src={companyInfo.logo} alt={companyInfo.name} className="h-12 object-contain" onError={(e) => e.target.style.display = 'none'} />
-            ) : (
-              <div className="h-12 w-12 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">Logo</div>
-            )}
-            <h1 className="text-xl font-bold">{companyInfo.name || 'Tiling Pro Estimator'}</h1>
-          </div>
-          <p className="text-xs text-gray-500">Add your logo in Settings</p>
+        <div className="bg-white rounded shadow p-4 mb-4 flex items-center gap-3">
+          {companyInfo.logo ? (
+            <img src={companyInfo.logo} alt={companyInfo.name} className="h-12 object-contain" onError={(e) => e.target.style.display = 'none'} />
+          ) : (
+            <div className="h-12 w-12 bg-gray-200 rounded flex items-center justify-center text-gray-400 text-xs">Logo</div>
+          )}
+          <h1 className="text-xl font-bold">{companyInfo.name || 'Tiling Pro Estimator'}</h1>
         </div>
         <div className="bg-white rounded shadow mb-4">
           <div className="flex border-b overflow-x-auto">
