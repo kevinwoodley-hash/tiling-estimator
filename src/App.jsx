@@ -289,64 +289,26 @@ export default function TilingEstimator() {
               </div>
             </div>
 
-            {/* Labour Pricing Method */}
-            <div className="bg-white rounded shadow p-4 mb-6">
-              <h2 className="text-lg font-semibold mb-3">Labour Pricing for This Job</h2>
-              <div className="space-y-3">
-                <div>
-                  <label className="block text-xs mb-2 text-gray-600">Choose pricing method:</label>
-                  <div className="flex gap-4 flex-wrap">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        checked={labour.type === 'm2'} 
-                        onChange={() => setLabour({...labour, type: 'm2'})} 
-                      />
-                      <span className="text-sm font-medium">Per m²</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        checked={labour.type === 'day'} 
-                        onChange={() => setLabour({...labour, type: 'day'})} 
-                      />
-                      <span className="text-sm font-medium">Day Rate</span>
-                    </label>
-                  </div>
+            {/* Day Rate Estimate */}
+            {labour.type === 'day' && (
+              <div className="bg-white rounded shadow p-4 mb-6">
+                <h2 className="text-lg font-semibold mb-3">Labour Estimate</h2>
+                <div className="bg-green-50 p-3 rounded">
+                  <label className="block text-xs mb-1 font-medium">Estimated Days for This Job</label>
+                  <input 
+                    type="number" 
+                    step="0.5" 
+                    value={labour.daysEstimate} 
+                    onChange={(e) => setLabour({...labour, daysEstimate: e.target.value})} 
+                    className="w-full px-2 py-1.5 border rounded text-sm" 
+                    placeholder="1"
+                  />
+                  <p className="text-xs text-green-800 mt-2">
+                    <strong>{labour.daysEstimate}</strong> day(s) × £{labour.dayRate}/day = <strong>£{totals.labourCost}</strong>
+                  </p>
                 </div>
-
-                {labour.type === 'm2' && (
-                  <div className="bg-blue-50 p-3 rounded">
-                    <p className="text-sm text-blue-900 font-medium mb-1">m² Pricing</p>
-                    <p className="text-xs text-blue-800">
-                      Total area: <strong>{totals.totalArea}m²</strong> × £{labour.m2Rate}/m² = <strong>£{totals.labourCost}</strong>
-                    </p>
-                    <p className="text-xs text-gray-600 mt-1">Rate from Settings: £{labour.m2Rate}/m²</p>
-                  </div>
-                )}
-
-                {labour.type === 'day' && (
-                  <div className="bg-green-50 p-3 rounded space-y-2">
-                    <p className="text-sm text-green-900 font-medium">Day Rate Pricing</p>
-                    <div>
-                      <label className="block text-xs mb-1">Estimated Days</label>
-                      <input 
-                        type="number" 
-                        step="0.5" 
-                        value={labour.daysEstimate} 
-                        onChange={(e) => setLabour({...labour, daysEstimate: e.target.value})} 
-                        className="w-full px-2 py-1.5 border rounded text-sm" 
-                        placeholder="1"
-                      />
-                      <p className="text-xs text-green-800 mt-1">
-                        <strong>{labour.daysEstimate}</strong> day(s) × £{labour.dayRate}/day = <strong>£{totals.labourCost}</strong>
-                      </p>
-                      <p className="text-xs text-gray-600 mt-1">Rate from Settings: £{labour.dayRate}/day</p>
-                    </div>
-                  </div>
-                )}
               </div>
-            </div>
+            )}
 
             <div className="mb-6">
               <div className="flex justify-between mb-3">
@@ -651,52 +613,89 @@ ${rooms.filter(r => r.notes).map(r => `${r.name}: ${r.notes}${r.notesPrice ? ` (
             </div>
 
             <div className="mb-6">
-              <h2 className="text-lg font-semibold mb-3">Default Labour Rates</h2>
+              <h2 className="text-lg font-semibold mb-3">Labour Pricing</h2>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-xs mb-1">m² Rate (£)</label>
-                  <input 
-                    type="number" 
-                    step="0.01"
-                    value={labour.m2Rate} 
-                    onChange={(e) => setLabour({...labour, m2Rate: e.target.value})} 
-                    className="w-full px-2 py-1.5 border rounded text-sm" 
-                    placeholder="50"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Default rate per square meter for tiling</p>
+                  <label className="block text-xs mb-2 font-medium">Pricing Method</label>
+                  <p className="text-xs text-gray-600 mb-2">Choose how you want to price labour for all quotes:</p>
+                  <div className="flex gap-4 flex-wrap">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        checked={labour.type === 'm2'} 
+                        onChange={() => setLabour({...labour, type: 'm2'})} 
+                      />
+                      <span className="text-sm font-medium">Per m²</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input 
+                        type="radio" 
+                        checked={labour.type === 'day'} 
+                        onChange={() => setLabour({...labour, type: 'day'})} 
+                      />
+                      <span className="text-sm font-medium">Day Rate</span>
+                    </label>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs mb-1">Day Rate (£)</label>
-                  <input 
-                    type="number" 
-                    step="0.01"
-                    value={labour.dayRate} 
-                    onChange={(e) => setLabour({...labour, dayRate: e.target.value})} 
-                    className="w-full px-2 py-1.5 border rounded text-sm" 
-                    placeholder="250"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Default daily rate for tiling work</p>
+
+                <div className="border-t pt-3">
+                  <label className="block text-xs mb-2 font-medium">Labour Rates</label>
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-xs mb-1">m² Rate (£)</label>
+                      <input 
+                        type="number" 
+                        step="0.01"
+                        value={labour.m2Rate} 
+                        onChange={(e) => setLabour({...labour, m2Rate: e.target.value})} 
+                        className="w-full px-2 py-1.5 border rounded text-sm" 
+                        placeholder="50"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Rate per square meter for tiling</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs mb-1">Day Rate (£)</label>
+                      <input 
+                        type="number" 
+                        step="0.01"
+                        value={labour.dayRate} 
+                        onChange={(e) => setLabour({...labour, dayRate: e.target.value})} 
+                        className="w-full px-2 py-1.5 border rounded text-sm" 
+                        placeholder="250"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Daily rate for tiling work</p>
+                    </div>
+                    <div>
+                      <label className="block text-xs mb-1">Prep Work Hourly Rate (£)</label>
+                      <input 
+                        type="number" 
+                        step="0.01"
+                        value={labour.prepRate} 
+                        onChange={(e) => setLabour({...labour, prepRate: e.target.value})} 
+                        className="w-full px-2 py-1.5 border rounded text-sm" 
+                        placeholder="30"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Hourly rate for prep work (removal, floor prep, etc.)</p>
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs mb-1">Prep Work Hourly Rate (£)</label>
-                  <input 
-                    type="number" 
-                    step="0.01"
-                    value={labour.prepRate} 
-                    onChange={(e) => setLabour({...labour, prepRate: e.target.value})} 
-                    className="w-full px-2 py-1.5 border rounded text-sm" 
-                    placeholder="30"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Hourly rate for prep work (removal, floor prep, etc.)</p>
-                </div>
+
+                {labour.type === 'day' && (
+                  <div className="bg-yellow-50 border border-yellow-200 p-3 rounded">
+                    <p className="text-xs text-yellow-900">
+                      <strong>Note:</strong> When using Day Rate pricing, you'll need to enter the estimated number of days for each quote in the Estimate page.
+                    </p>
+                  </div>
+                )}
+
                 <button 
                   onClick={() => { 
                     localStorage.setItem('tilingLabourRates', JSON.stringify(labour)); 
-                    alert('Labour rates saved!'); 
+                    alert('Labour pricing saved!'); 
                   }} 
                   className={`w-full px-3 py-2 ${theme.primary} text-white rounded text-sm`}
                 >
-                  Save Labour Rates
+                  Save Labour Pricing
                 </button>
               </div>
             </div>
