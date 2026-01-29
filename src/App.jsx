@@ -8,7 +8,7 @@ export default function TilingEstimator() {
   const [addressSearch, setAddressSearch] = useState('');
   const [addressResults, setAddressResults] = useState([]);
   const [searchingAddress, setSearchingAddress] = useState(false);
-  const [labour, setLabour] = useState({ type: 'm2', m2Rate: '50', dayRate: '250', daysEstimate: '1', prepWork: false, prepRate: '30', prepHours: '0' });
+  const [labour, setLabour] = useState({ type: 'both', m2Rate: '50', m2Area: '0', dayRate: '250', daysEstimate: '1', prepWork: false, prepRate: '30', prepHours: '0' });
   const [pricing, setPricing] = useState({ adhesivePrice: '15', groutPrice: '8', cementBoardPrice: '12', antiCrackPrice: '5', tankingPrice: '35', trimPrice: '8', sealerPrice: '25', sealantPrice: '5', levelingCompoundPrice: '18', profitMargin: '20', wastePercentage: '20' });
   const [savedCustomers, setSavedCustomers] = useState([]);
   const [savedQuotes, setSavedQuotes] = useState([]);
@@ -40,6 +40,8 @@ export default function TilingEstimator() {
     if (t) setCurrentTheme(t);
     const co = localStorage.getItem('tilingCompanyInfo');
     if (co) setCompanyInfo(JSON.parse(co));
+    const lr = localStorage.getItem('tilingLabourRates');
+    if (lr) setLabour({...labour, ...JSON.parse(lr)});
   }, []);
 
   const adhesiveCoverage = { '3': 8, '6': 5.5, '10': 3.3, '12': 3.3 };
@@ -131,13 +133,30 @@ export default function TilingEstimator() {
     const trimLengths = Math.ceil(trim / 2.5);
     const sealerBottles = Math.ceil((sealerArea / 10) * 2); // 2 coats, 10m² per bottle
     const levelingBags = Math.ceil(levelingCompound * 1.2);
-    const labourCost = labour.type === 'm2' ? area * parseFloat(labour.m2Rate || 0) : parseFloat(labour.dayRate || 0) * parseFloat(labour.daysEstimate || 0);
+    
+    // Calculate labour cost based on type
+    let labourCost = 0;
+    let m2Cost = 0;
+    let dayCost = 0;
+    
+    if (labour.type === 'm2') {
+      labourCost = area * parseFloat(labour.m2Rate || 0);
+      m2Cost = labourCost;
+    } else if (labour.type === 'day') {
+      labourCost = parseFloat(labour.dayRate || 0) * parseFloat(labour.daysEstimate || 0);
+      dayCost = labourCost;
+    } else if (labour.type === 'both') {
+      m2Cost = parseFloat(labour.m2Area || 0) * parseFloat(labour.m2Rate || 0);
+      dayCost = parseFloat(labour.dayRate || 0) * parseFloat(labour.daysEstimate || 0);
+      labourCost = m2Cost + dayCost;
+    }
+    
     const prepCost = labour.prepWork ? parseFloat(labour.prepRate || 0) * parseFloat(labour.prepHours || 0) : 0;
     const baseMat = (adhesiveBags * parseFloat(pricing.adhesivePrice || 0)) + (groutBags * parseFloat(pricing.groutPrice || 0)) + (cementBoards * parseFloat(pricing.cementBoardPrice || 0)) + (antiCrack * 1.2 * parseFloat(pricing.antiCrackPrice || 0)) + (tankingTubs * parseFloat(pricing.tankingPrice || 0)) + (trimLengths * parseFloat(pricing.trimPrice || 0)) + (sealerBottles * parseFloat(pricing.sealerPrice || 0)) + (sealantTubes * parseFloat(pricing.sealantPrice || 0)) + (levelingBags * parseFloat(pricing.levelingCompoundPrice || 0));
     const matCost = baseMat * (1 + parseFloat(pricing.profitMargin || 0) / 100);
     const totalLabourCost = labourCost + prepCost;
     const totalCost = matCost + totalLabourCost + notesTotal;
-    return { totalArea: area.toFixed(2), adhesiveBags, groutBags, cementBoards, antiCrackMembrane: antiCrack.toFixed(2), tankingTubs, trimLengths, sealerBottles, sealerArea: sealerArea.toFixed(2), sealantTubes: Math.round(sealantTubes), levelingBags, labourCost: labourCost.toFixed(2), prepCost: prepCost.toFixed(2), totalLabourCost: totalLabourCost.toFixed(2), notesTotal: notesTotal.toFixed(2), materialsCost: matCost.toFixed(2), profitAmount: (matCost - baseMat).toFixed(2), totalCost: totalCost.toFixed(2) };
+    return { totalArea: area.toFixed(2), adhesiveBags, groutBags, cementBoards, antiCrackMembrane: antiCrack.toFixed(2), tankingTubs, trimLengths, sealerBottles, sealerArea: sealerArea.toFixed(2), sealantTubes: Math.round(sealantTubes), levelingBags, labourCost: labourCost.toFixed(2), m2Cost: m2Cost.toFixed(2), dayCost: dayCost.toFixed(2), prepCost: prepCost.toFixed(2), totalLabourCost: totalLabourCost.toFixed(2), notesTotal: notesTotal.toFixed(2), materialsCost: matCost.toFixed(2), profitAmount: (matCost - baseMat).toFixed(2), totalCost: totalCost.toFixed(2) };
   };
 
   const totals = calculateTotals();
@@ -270,6 +289,98 @@ export default function TilingEstimator() {
                   <div><label className="block text-xs mb-1">Phone</label><input type="text" value={customer.phone} onChange={(e) => setCustomer({...customer, phone: e.target.value})} className="w-full px-2 py-1.5 border rounded text-sm" /></div>
                   <div><label className="block text-xs mb-1">Email</label><input type="text" value={customer.email} onChange={(e) => setCustomer({...customer, email: e.target.value})} className="w-full px-2 py-1.5 border rounded text-sm" /></div>
                 </div>
+              </div>
+            </div>
+
+            {/* Labour Pricing */}
+            <div className="bg-white rounded shadow p-4 mb-6">
+              <h2 className="text-lg font-semibold mb-3">Labour Pricing</h2>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs mb-1">Pricing Method</label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" checked={labour.type === 'm2'} onChange={() => setLabour({...labour, type: 'm2'})} />
+                      <span className="text-sm">Per m²</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" checked={labour.type === 'day'} onChange={() => setLabour({...labour, type: 'day'})} />
+                      <span className="text-sm">Day Rate</span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input type="radio" checked={labour.type === 'both'} onChange={() => setLabour({...labour, type: 'both'})} />
+                      <span className="text-sm">Both (m² + Days)</span>
+                    </label>
+                  </div>
+                </div>
+
+                {(labour.type === 'm2' || labour.type === 'both') && (
+                  <div className="bg-blue-50 p-3 rounded space-y-2">
+                    <div>
+                      <label className="block text-xs mb-1">Rate per m²</label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">£</span>
+                        <input type="number" step="0.01" value={labour.m2Rate} onChange={(e) => setLabour({...labour, m2Rate: e.target.value})} className="w-full px-2 py-1.5 border rounded text-sm" />
+                      </div>
+                    </div>
+                    {labour.type === 'both' && (
+                      <div>
+                        <label className="block text-xs mb-1">Area for m² Pricing (m²)</label>
+                        <input type="number" step="0.01" value={labour.m2Area} onChange={(e) => setLabour({...labour, m2Area: e.target.value})} className="w-full px-2 py-1.5 border rounded text-sm" placeholder="e.g., 15" />
+                        <p className="text-xs text-gray-600 mt-1">{labour.m2Area || 0}m² @ £{labour.m2Rate} = £{(parseFloat(labour.m2Area || 0) * parseFloat(labour.m2Rate || 0)).toFixed(2)}</p>
+                      </div>
+                    )}
+                    {labour.type === 'm2' && (
+                      <p className="text-xs text-gray-600">Total: {totals.totalArea}m² @ £{labour.m2Rate} = £{totals.m2Cost}</p>
+                    )}
+                  </div>
+                )}
+
+                {(labour.type === 'day' || labour.type === 'both') && (
+                  <div className="bg-green-50 p-3 rounded space-y-2">
+                    <div>
+                      <label className="block text-xs mb-1">Day Rate</label>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm">£</span>
+                        <input type="number" step="0.01" value={labour.dayRate} onChange={(e) => setLabour({...labour, dayRate: e.target.value})} className="w-full px-2 py-1.5 border rounded text-sm" />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs mb-1">Estimated Days</label>
+                      <input type="number" step="0.5" value={labour.daysEstimate} onChange={(e) => setLabour({...labour, daysEstimate: e.target.value})} className="w-full px-2 py-1.5 border rounded text-sm" />
+                      <p className="text-xs text-gray-600 mt-1">{labour.daysEstimate} days @ £{labour.dayRate} = £{totals.dayCost}</p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-3 border-t">
+                  <label className="flex items-center gap-2 mb-2 cursor-pointer">
+                    <input type="checkbox" checked={labour.prepWork} onChange={(e) => setLabour({...labour, prepWork: e.target.checked})} />
+                    <span className="text-sm">Add Prep Work</span>
+                  </label>
+                  {labour.prepWork && (
+                    <div className="bg-yellow-50 p-3 rounded space-y-2">
+                      <div>
+                        <label className="block text-xs mb-1">Hourly Rate (£)</label>
+                        <input type="number" step="0.01" value={labour.prepRate} onChange={(e) => setLabour({...labour, prepRate: e.target.value})} className="w-full px-2 py-1.5 border rounded text-sm" />
+                      </div>
+                      <div>
+                        <label className="block text-xs mb-1">Estimated Hours</label>
+                        <input type="number" step="0.5" value={labour.prepHours} onChange={(e) => setLabour({...labour, prepHours: e.target.value})} className="w-full px-2 py-1.5 border rounded text-sm" />
+                        <p className="text-xs text-gray-600 mt-1">Prep: £{totals.prepCost}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {labour.type === 'both' && (
+                  <div className="bg-purple-50 p-3 rounded">
+                    <p className="text-sm font-medium">Total Labour: £{(parseFloat(totals.m2Cost) + parseFloat(totals.dayCost) + parseFloat(totals.prepCost)).toFixed(2)}</p>
+                    <p className="text-xs text-gray-600 mt-1">
+                      m²: £{totals.m2Cost} + Days: £{totals.dayCost}{parseFloat(totals.prepCost) > 0 ? ` + Prep: £${totals.prepCost}` : ''}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -560,6 +671,57 @@ ${rooms.filter(r => r.notes).map(r => `${r.name}: ${r.notes}${r.notesPrice ? ` (
                   className={`w-full px-3 py-2 ${theme.primary} text-white rounded text-sm`}
                 >
                   Save Company Info
+                </button>
+              </div>
+            </div>
+
+            <div className="mb-6">
+              <h2 className="text-lg font-semibold mb-3">Default Labour Rates</h2>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-xs mb-1">m² Rate (£)</label>
+                  <input 
+                    type="number" 
+                    step="0.01"
+                    value={labour.m2Rate} 
+                    onChange={(e) => setLabour({...labour, m2Rate: e.target.value})} 
+                    className="w-full px-2 py-1.5 border rounded text-sm" 
+                    placeholder="50"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Default rate per square meter for tiling</p>
+                </div>
+                <div>
+                  <label className="block text-xs mb-1">Day Rate (£)</label>
+                  <input 
+                    type="number" 
+                    step="0.01"
+                    value={labour.dayRate} 
+                    onChange={(e) => setLabour({...labour, dayRate: e.target.value})} 
+                    className="w-full px-2 py-1.5 border rounded text-sm" 
+                    placeholder="250"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Default daily rate for tiling work</p>
+                </div>
+                <div>
+                  <label className="block text-xs mb-1">Prep Work Hourly Rate (£)</label>
+                  <input 
+                    type="number" 
+                    step="0.01"
+                    value={labour.prepRate} 
+                    onChange={(e) => setLabour({...labour, prepRate: e.target.value})} 
+                    className="w-full px-2 py-1.5 border rounded text-sm" 
+                    placeholder="30"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">Hourly rate for prep work (removal, floor prep, etc.)</p>
+                </div>
+                <button 
+                  onClick={() => { 
+                    localStorage.setItem('tilingLabourRates', JSON.stringify(labour)); 
+                    alert('Labour rates saved!'); 
+                  }} 
+                  className={`w-full px-3 py-2 ${theme.primary} text-white rounded text-sm`}
+                >
+                  Save Labour Rates
                 </button>
               </div>
             </div>
