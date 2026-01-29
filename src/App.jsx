@@ -8,7 +8,7 @@ export default function TilingEstimator() {
   const [addressSearch, setAddressSearch] = useState('');
   const [addressResults, setAddressResults] = useState([]);
   const [searchingAddress, setSearchingAddress] = useState(false);
-  const [labour, setLabour] = useState({ type: 'both', m2Rate: '50', m2Area: '0', dayRate: '250', daysEstimate: '1', prepWork: false, prepRate: '30', prepHours: '0' });
+  const [labour, setLabour] = useState({ type: 'm2', m2Rate: '50', m2Area: '0', dayRate: '250', daysEstimate: '1', prepWork: false, prepRate: '30', prepHours: '0' });
   const [pricing, setPricing] = useState({ adhesivePrice: '15', groutPrice: '8', cementBoardPrice: '12', antiCrackPrice: '5', tankingPrice: '35', trimPrice: '8', sealerPrice: '25', sealantPrice: '5', levelingCompoundPrice: '18', profitMargin: '20', wastePercentage: '20' });
   const [savedCustomers, setSavedCustomers] = useState([]);
   const [savedQuotes, setSavedQuotes] = useState([]);
@@ -698,13 +698,19 @@ ${rooms.filter(r => r.notes).map(r => `${r.name}: ${r.notes}${r.notesPrice ? ` (
                   <PoundSterling className="w-5 h-5" />
                   Labour Pricing
                 </h2>
-                <p className="mb-2">Configure your labour rates in the <strong>Settings</strong> tab:</p>
+                <p className="mb-2">All labour pricing is configured in the <strong>Settings</strong> tab:</p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
                   <li><strong>m² Rate:</strong> Default rate per square meter (e.g., £50/m²)</li>
                   <li><strong>Day Rate:</strong> Default daily rate (e.g., £250/day)</li>
                   <li><strong>Prep Work Rate:</strong> Hourly rate for preparation work (e.g., £30/hr)</li>
                 </ul>
-                <p className="mt-2 text-xs bg-blue-50 p-2 rounded">💡 <strong>Important:</strong> Labour rates are now ONLY set in Settings and apply automatically to all quotes. The app can calculate using m² pricing (total area × rate), day rate, or both methods combined depending on your job requirements.</p>
+                <div className="mt-2 text-xs bg-blue-50 p-2 rounded space-y-1">
+                  <p>💡 <strong>How It Works:</strong></p>
+                  <p>• Set your rates once in Settings - they save automatically</p>
+                  <p>• Rates apply to all quotes</p>
+                  <p>• Labour is calculated using total area × m² rate by default</p>
+                  <p>• All labour calculations happen automatically - no per-job configuration needed</p>
+                </div>
               </section>
 
               <section>
@@ -764,8 +770,8 @@ ${rooms.filter(r => r.notes).map(r => `${r.name}: ${r.notes}${r.notesPrice ? ` (
               <section>
                 <h2 className="text-lg font-semibold mb-2">Quick Tips</h2>
                 <div className="bg-blue-50 p-3 rounded space-y-2 text-xs">
-                  <p>✅ <strong>Set labour rates in Settings</strong> - they apply automatically to all quotes</p>
-                  <p>✅ <strong>Use the floating Help button</strong> - click the orange button in bottom-right corner anytime</p>
+                  <p>✅ <strong>Set labour rates in Settings once</strong> - they apply automatically to all quotes using total area × m² rate</p>
+                  <p>✅ <strong>Use the floating Help button</strong> - click the orange button at bottom-center anytime</p>
                   <p>✅ <strong>Save customers separately</strong> - reuse their details for future quotes</p>
                   <p>✅ <strong>All data saves in your browser</strong> - no internet needed after loading</p>
                   <p>✅ <strong>Use address search</strong> - saves time and ensures accuracy</p>
