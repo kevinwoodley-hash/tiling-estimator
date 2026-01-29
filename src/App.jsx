@@ -17,6 +17,7 @@ export default function TilingEstimator() {
   const [showQuoteList, setShowQuoteList] = useState(false);
   const [currentTheme, setCurrentTheme] = useState('blue');
   const [companyInfo, setCompanyInfo] = useState({ name: '', logo: '' });
+  const [showFloatingHelp, setShowFloatingHelp] = useState(true);
 
   const themes = {
     blue: { primary: 'bg-blue-600', secondary: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-600', name: 'Professional Blue' },
@@ -701,11 +702,13 @@ ${rooms.filter(r => r.notes).map(r => `${r.name}: ${r.notes}${r.notesPrice ? ` (
                   <PoundSterling className="w-5 h-5" />
                   Labour Pricing
                 </h2>
+                <p className="mb-2">Configure your labour rates in the <strong>Settings</strong> tab:</p>
                 <ul className="list-disc list-inside space-y-1 ml-2">
-                  <li><strong>Per m²:</strong> Set rate per square meter (e.g., £50/m²)</li>
-                  <li><strong>Day Rate:</strong> Set daily rate and estimate number of days</li>
-                  <li><strong>Prep Work:</strong> Optional - add hourly rate and estimated hours</li>
+                  <li><strong>m² Rate:</strong> Default rate per square meter (e.g., £50/m²)</li>
+                  <li><strong>Day Rate:</strong> Default daily rate (e.g., £250/day)</li>
+                  <li><strong>Prep Work Rate:</strong> Hourly rate for preparation work (e.g., £30/hr)</li>
                 </ul>
+                <p className="mt-2 text-xs bg-blue-50 p-2 rounded">💡 <strong>Important:</strong> Labour rates are now ONLY set in Settings and apply automatically to all quotes. The app can calculate using m² pricing (total area × rate), day rate, or both methods combined depending on your job requirements.</p>
               </section>
 
               <section>
@@ -731,15 +734,21 @@ ${rooms.filter(r => r.notes).map(r => `${r.name}: ${r.notes}${r.notesPrice ? ` (
                 <ol className="list-decimal list-inside space-y-2 ml-2">
                   <li><strong>Save:</strong> Click "Save" button to store quote (updates if already saved)</li>
                   <li><strong>Load:</strong> Click "Quotes" to view and load previous quotes</li>
-                  <li><strong>Send:</strong> Go to Quote tab, then click WhatsApp or Email to send detailed quote with:
+                  <li><strong>Send:</strong> Go to Quote tab, then click WhatsApp or Email to send a comprehensive professional quote with:
                     <ul className="list-disc list-inside ml-6 mt-1 text-xs">
-                      <li>Project overview (rooms, areas, features)</li>
-                      <li>Complete materials breakdown with prices</li>
-                      <li>Labour total</li>
+                      <li>Company name and branding (if set)</li>
+                      <li>Customer details and address</li>
+                      <li>Project overview: total area and room-by-room breakdown with features</li>
+                      <li>Complete materials list: quantity @ unit price = line total for each item</li>
+                      <li>Materials subtotal with profit margin applied</li>
+                      <li>Labour total (no breakdown shown to customer)</li>
                       <li>Final quote amount</li>
+                      <li>Room notes and additional work</li>
+                      <li>Waste allowance percentage note</li>
                     </ul>
                   </li>
                 </ol>
+                <p className="mt-2 text-xs bg-green-50 p-2 rounded">✅ <strong>Professional Quotes:</strong> Customers receive complete transparency on materials while labour remains as a single total, protecting your pricing strategy.</p>
               </section>
 
               <section>
@@ -749,14 +758,18 @@ ${rooms.filter(r => r.notes).map(r => `${r.name}: ${r.notes}${r.notesPrice ? ` (
                 </h2>
                 <ul className="list-disc list-inside space-y-1 ml-2">
                   <li><strong>Company Info:</strong> Add your company name and logo URL</li>
+                  <li><strong>Default Labour Rates:</strong> Set your m² rate, day rate, and prep work hourly rate</li>
                   <li><strong>Color Themes:</strong> Choose from 6 professional color schemes</li>
-                  <li>Your logo appears on all pages and in quotes</li>
+                  <li>Your logo and company name appear on all pages and in quotes</li>
+                  <li>All settings save to your browser and persist between sessions</li>
                 </ul>
               </section>
 
               <section>
                 <h2 className="text-lg font-semibold mb-2">Quick Tips</h2>
                 <div className="bg-blue-50 p-3 rounded space-y-2 text-xs">
+                  <p>✅ <strong>Set labour rates in Settings</strong> - they apply automatically to all quotes</p>
+                  <p>✅ <strong>Use the floating Help button</strong> - click the orange button in bottom-right corner anytime</p>
                   <p>✅ <strong>Save customers separately</strong> - reuse their details for future quotes</p>
                   <p>✅ <strong>All data saves in your browser</strong> - no internet needed after loading</p>
                   <p>✅ <strong>Use address search</strong> - saves time and ensures accuracy</p>
@@ -764,6 +777,7 @@ ${rooms.filter(r => r.notes).map(r => `${r.name}: ${r.notes}${r.notesPrice ? ` (
                   <p>✅ <strong>Check the summary</strong> - review totals before sending quote</p>
                   <p>✅ <strong>Cement board + Anti-crack</strong> = 4kg/m² extra adhesive total</p>
                   <p>✅ <strong>Natural stone</strong> automatically adds sealer to materials</p>
+                  <p>✅ <strong>Professional quotes</strong> - detailed material breakdown, labour shown as total only</p>
                 </div>
               </section>
 
@@ -782,6 +796,27 @@ ${rooms.filter(r => r.notes).map(r => `${r.name}: ${r.notes}${r.notesPrice ? ` (
           </div>
         )}
       </div>
+
+      {/* Floating Help Button */}
+      {showFloatingHelp && page !== 'help' && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50">
+          <div className="relative">
+            <button
+              onClick={() => setShowFloatingHelp(false)}
+              className="absolute -top-2 -right-2 bg-gray-600 hover:bg-gray-700 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-lg"
+            >
+              ✕
+            </button>
+            <button
+              onClick={() => setPage('help')}
+              className="bg-orange-500 hover:bg-orange-600 text-white rounded-full px-6 py-3 flex items-center justify-center gap-2 shadow-lg transition-transform hover:scale-105"
+            >
+              <HelpCircle className="w-5 h-5" />
+              <span className="text-sm font-semibold">Need Help?</span>
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
