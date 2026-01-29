@@ -179,10 +179,6 @@ export default function TilingEstimator() {
                 <span className="text-xs sm:text-base">{p.charAt(0).toUpperCase() + p.slice(1)}</span>
               </button>
             ))}
-            <button onClick={() => setPage('help')} className={`flex-1 min-w-[80px] px-2 sm:px-4 py-3 ${page === 'help' ? 'bg-orange-500 text-white border-b-2 border-orange-600' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'}`}>
-              <HelpCircle className="w-4 h-4 sm:w-5 sm:h-5 inline mr-1 sm:mr-2" />
-              <span className="text-xs sm:text-base font-semibold">Help</span>
-            </button>
           </div>
         </div>
 
