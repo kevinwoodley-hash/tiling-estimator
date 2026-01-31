@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TileMaster DIY</title>
+    <style>
+        :root { --primary: #2563eb; --secondary: #059669; --bg: #f8fafc; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); padding: 20px; color: #1e293b; }
+        .container { max-width: 450px; margin: auto; background: white; padding: 25px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        h1 { font-size: 1.5rem; text-align: center; margin-bottom: 1.5rem; }
+        .input-group { margin-bottom: 1rem; }
+        label { display: block; font-size: 0.8rem; font-weight: 600; margin-bottom: 4px; color: #64748b; }
+        input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 1rem; }
+        button { width: 100%; padding: 14px; background: var(--primary); color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; margin-top: 10px; transition: opacity 0.2s; }
+        button:active { opacity: 0.8; }
+        .results { margin-top: 20px; padding: 15px; background: #f1f5f9; border-radius: 10px; display: none; }
+        .shop-card { background: white; padding: 10px; border-radius: 6px; margin-top: 8px; border-left: 4px solid var(--secondary); font-size: 0.9rem; }
+        .shop-btn { background: var(--secondary); }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>TileMaster DIY</h1>
+    
+    <div class="input-group">
+        <label>Room Area (m²)</label>
+        <input type="number" id="area" placeholder="e.g. 15">
+    </div>
+
+    <div style="display:flex; gap:10px;" class="input-group">
+        <div style="flex:1">
+            <label>Tile Width (mm)</label>
+            <input type="number" id="tW" placeholder="300">
+        </div>
+        <div style="flex:1">
+            <label>Tile Height (mm)</label>
+            <input type="number" id="tH" placeholder="300">
+        </div>
+    </div>
+
+    <button onclick="calculate()">Calculate Materials</button>
+
+    <div id="results" class="results">
+        <h3>Shopping List</h3>
+        <p>Tiles: <strong id="resTiles">0</strong> units</p>
+        <p>Adhesive: <strong id="resAdhesive">0</strong> kg</p>
+        <p>Grout: <strong id="resGrout">0</strong> kg</p>
+        
+        <hr>
+        <button class="shop-btn" id="findBtn" onclick="findShops()">Find Nearby Tile Shops</button>
+        <div id="shopList"></div>
+    </div>
+</div>
+
+<script>
+function calculate() {
+    const area = parseFloat(document.getElementById('area').value);
+    const tW = parseFloat(document.getElementById('tW').value) / 1000;
+    const tH = parseFloat(document.getElementById('tH').value) / 1000;
+
+    if (!area || !tW || !tH) return alert("Please fill in all fields.");
+
+    const tileArea = tW * tH;
+    const totalTiles = Math.ceil((area * 1.10) / tileArea);
+    const adhesive = Math.ceil(area * 4);
+    const grout = Math.ceil(area * 0.5);
+
+    document.getElementById('resTiles').innerText = totalTiles;
+    document.getElementById('resAdhesive').innerText = adhesive;
+    document.getElementById('resGrout').innerText = grout;
+    document.getElementById('results').style.display = 'block';
+}
+
+async function findShops() {
+    const btn = document.getElementById('findBtn');
+    const list = document.getElementById('shopList');
+    btn.innerText = "Locating...";
+
+    navigator.geolocation.getCurrentPosition(async (pos) => {
+        const { latitude, longitude } = pos.coords;
+        // Replace 'YOUR_GEOAPIFY_KEY' with your actual key from geoapify.com
+        const API_KEY = "YOUR_GEOAPIFY_KEY"; 
+        const url = `https://api.geoapify.com/v2/places?categories=commercial.hardware,building_materials&filter=circle:${longitude},${latitude},5000&limit=5&apiKey=${API_KEY}`;
+
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+            
+            list.innerHTML = "<h4>Nearby Stores:</h4>";
+            data.features.forEach(f => {
+                const p = f.properties;
+                list.innerHTML += `<div class="shop-card"><strong>${p.name || 'Tile Supplier'}</strong><br>${p.address_line2}</div>`;
+            });
+            btn.innerText = "Update Locations";
+        } catch (err) {
+            list.innerHTML = "<p>Error finding shops. Check your API key.</p>";
+            btn.innerText = "Try Again";
+        }
+    }, () => {
+        alert("Location access denied.");
+        btn.innerText = "Find Nearby Tile Shops";
+    });
+}
+</script>
+
+</body>
+</html>
