@@ -19,6 +19,22 @@
 
 **That's it! No configuration needed.**
 
+### Option 2: Deploy to GitHub Pages (Also Easy)
+
+1. **Update `vite.config.js`** - change base to your repo name:
+   ```javascript
+   base: '/your-repo-name/',
+   ```
+
+2. **Deploy:**
+   ```bash
+   npm run deploy
+   ```
+
+3. **Enable GitHub Pages** in repo settings → Pages → select `gh-pages` branch
+
+Your site will be at: `https://yourusername.github.io/your-repo-name/`
+
 ---
 
 ## Local Testing (Optional)
@@ -84,6 +100,7 @@ Once deployed on Vercel:
 
 ## What This App Does
 
+### Basic Features
 ✅ Multiple rooms with editable names
 ✅ Multiple areas per room (alcoves, recesses, etc.)
 ✅ Preset and custom tile sizes
@@ -92,6 +109,15 @@ Once deployed on Vercel:
 ✅ Professional design
 ✅ Mobile responsive
 ✅ Grand totals summary
+
+### Professional Mode Features
+✅ Customer information management
+✅ Automatic material calculations (adhesive, grout, primer, sealer)
+✅ Complete cost breakdown with pricing
+✅ Adjustable markup percentage
+✅ WhatsApp quote sharing
+✅ Download detailed estimates
+✅ Industry-standard material rates
 
 ---
 

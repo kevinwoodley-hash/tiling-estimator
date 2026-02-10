@@ -4,13 +4,28 @@ A professional tiling calculator that allows you to calculate tile requirements 
 
 ## Features
 
+### Core Calculator Features
 - **Multi-Room Support**: Add unlimited rooms to your project
 - **Multiple Areas Per Room**: Break down complex spaces into separate areas (main floor, alcoves, window recesses, etc.)
 - **Flexible Tile Sizes**: Pre-configured common sizes plus custom tile dimensions
 - **Wastage Calculation**: Adjustable wastage percentage (5-20%)
 - **Real-Time Calculations**: Instant updates for area, tiles needed, and total quantities
-- **Professional Design**: Clean, modern interface with gradient styling
 - **Mobile Responsive**: Works perfectly on all devices
+
+### Professional Mode Features
+- **Customer Management**: Store customer name, phone, email, and address
+- **Material Calculations**: Automatic calculation of adhesive, grout, primer, and sealer requirements
+- **Cost Breakdown**: Complete pricing with tiles, labour, and materials
+- **Markup Management**: Adjustable profit margin percentage
+- **WhatsApp Export**: Share quotes directly via WhatsApp
+- **File Export**: Download detailed estimates as text files
+- **Professional Summary**: Grand totals across all rooms and materials
+
+### Professional Design
+- Clean, modern interface with gradient styling
+- Toggle between simple and professional modes
+- Comprehensive cost breakdown with line items
+- Material quantities based on industry standards
 
 ## Area Types Supported
 
@@ -97,36 +112,26 @@ A professional tiling calculator that allows you to calculate tile requirements 
 
 ### Deploy to GitHub Pages
 
-1. **Install gh-pages:**
-   ```bash
-   npm install --save-dev gh-pages
-   ```
-
-2. **Add to package.json:**
-   ```json
-   "scripts": {
-     "deploy": "vite build && gh-pages -d dist"
-   }
-   ```
-
-3. **Update vite.config.js:**
+1. **Update vite.config.js with your repository name:**
    ```javascript
    export default defineConfig({
      plugins: [react()],
-     base: '/your-repo-name/',  // Add this line
+     base: '/your-repo-name/',  // e.g., '/tiling-estimator/'
    })
    ```
 
-4. **Deploy:**
+2. **Deploy:**
    ```bash
    npm run deploy
    ```
 
-5. **Enable GitHub Pages:**
+3. **Enable GitHub Pages:**
    - Go to your repository settings
    - Navigate to Pages section
    - Select `gh-pages` branch
    - Save
+
+Your site will be live at: `https://yourusername.github.io/your-repo-name/`
 
 ### Deploy to Netlify
 
@@ -153,6 +158,8 @@ tiling-estimator/
 
 ## How to Use
 
+### Basic Mode
+
 1. **Add Rooms**: Click "+ Add Room" to create a new room
 2. **Name Your Room**: Click on the room name to edit it
 3. **Configure Tile Settings**: Select tile size and wastage percentage
@@ -164,11 +171,49 @@ tiling-estimator/
    - Number of tiles needed
    - Grand totals across all rooms
 
+### Professional Mode
+
+Click "Show Professional Mode" to access advanced features:
+
+1. **Customer Information**
+   - Enter customer name, phone, email, and address
+   - Information automatically included in exports
+
+2. **Materials Required**
+   - View automatic calculations for:
+     - Adhesive (3.5 kg/m²)
+     - Grout (0.5 kg/m²)
+     - Primer (0.15 L/m²)
+     - Sealer (0.1 L/m²)
+
+3. **Pricing & Costs**
+   - Enter prices for tiles, labour, and materials
+   - Set your markup percentage
+   - View complete cost breakdown with subtotal and total
+
+4. **Export Options**
+   - **WhatsApp**: Share formatted quote via WhatsApp
+   - **Download**: Save detailed estimate as text file
+   - Both exports include all room details, materials, and costs
+
 ## Calculations
 
+### Area & Tile Calculations
 - **Net Area**: Sum of all area dimensions (length × width)
 - **Wastage Calculation**: Net area × (1 + wastage%)
 - **Tiles Required**: Rounded up (Total area with wastage ÷ single tile area)
+
+### Material Requirements (Industry Standard Rates)
+- **Adhesive**: 3.5 kg per m²
+- **Grout**: 0.5 kg per m²
+- **Primer**: 0.15 L per m²
+- **Sealer**: 0.1 L per m²
+
+### Cost Calculations
+- **Line Items**: Tiles, Labour, Adhesive, Grout, Primer, Sealer
+- **Subtotal**: Sum of all line items
+- **Markup**: Subtotal × (markup % / 100)
+- **Total**: Subtotal + Markup
 
 ## Browser Support
 
@@ -181,8 +226,10 @@ Works on all modern browsers:
 ## Tech Stack
 
 - **React 18** - UI framework
-- **Vite 5** - Build tool and dev server
-- **Vanilla CSS** - Inline styles with gradients
+- **Vite 4** - Build tool and dev server
+- **Tailwind CSS** - Utility-first styling
+- **Lucide React** - Icon library
+- **PostCSS & Autoprefixer** - CSS processing
 
 ## License
 
