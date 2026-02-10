@@ -246,50 +246,44 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom }
             value={room.name}
             onChange={(e) => updateField("name", e.target.value)}
             style={{
-              background: "rgba(255,255,255,0.06)",
-              border: "1px solid rgba(255,255,255,0.1)",
-              borderRadius: "8px",
-              padding: "8px 12px",
-              color: "#e2e8f0",
-              fontSize: "16px",
+              ...inputStyle,
+              fontSize: "18px",
               fontWeight: 700,
+              background: "transparent",
+              border: "1px solid transparent",
+              padding: "4px 8px",
               fontFamily: "'DM Sans', sans-serif",
-              outline: "none",
-              flex: 1,
-              maxWidth: "200px",
             }}
+            onFocus={(e) => { e.target.style.border = "1px solid rgba(245,158,11,0.4)"; }}
+            onBlur={(e) => { e.target.style.border = "1px solid transparent"; }}
           />
         </div>
         {canRemoveRoom && (
           <button
             onClick={() => onRemoveRoom(room.id)}
             style={{
-              background: "rgba(239,68,68,0.15)",
-              border: "1px solid rgba(239,68,68,0.3)",
+              background: "rgba(239,68,68,0.12)",
+              border: "1px solid rgba(239,68,68,0.25)",
               color: "#f87171",
               borderRadius: "8px",
-              padding: "6px 12px",
+              padding: "6px 14px",
               cursor: "pointer",
               fontSize: "13px",
               fontWeight: 600,
               fontFamily: "'DM Sans', sans-serif",
             }}
           >
-            ✕ Remove Room
+            Remove Room
           </button>
         )}
       </div>
 
-      {/* Tile Settings */}
+      {/* Tile & Wastage Settings */}
       <div style={{
-        background: "rgba(255,255,255,0.04)",
-        border: "1px solid rgba(255,255,255,0.08)",
-        borderRadius: "12px",
-        padding: "16px",
-        marginBottom: "20px",
         display: "grid",
-        gridTemplateColumns: "1fr 1fr",
+        gridTemplateColumns: isCustomTile ? "1fr 1fr 1fr" : "2fr 1fr",
         gap: "12px",
+        marginBottom: "16px",
       }}>
         <div>
           <label style={labelStyle}>Tile Size</label>
@@ -298,41 +292,37 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom }
             onChange={(e) => updateField("tileSize", parseInt(e.target.value))}
             style={selectStyle}
           >
-            {TILE_SIZES.map((size, i) => (
-              <option key={i} value={i}>{size.label}</option>
+            {TILE_SIZES.map((ts, i) => (
+              <option key={i} value={i}>{ts.label}</option>
             ))}
           </select>
         </div>
-
         {isCustomTile && (
-          <>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
             <div>
-              <label style={labelStyle}>Width (mm)</label>
+              <label style={labelStyle}>Tile W (mm)</label>
               <input
                 type="number"
-                step="1"
                 min="0"
-                placeholder="600"
+                placeholder="mm"
                 value={room.customTileW}
                 onChange={(e) => updateField("customTileW", e.target.value)}
                 style={inputStyle}
               />
             </div>
             <div>
-              <label style={labelStyle}>Height (mm)</label>
+              <label style={labelStyle}>Tile H (mm)</label>
               <input
                 type="number"
-                step="1"
                 min="0"
-                placeholder="600"
+                placeholder="mm"
                 value={room.customTileH}
                 onChange={(e) => updateField("customTileH", e.target.value)}
                 style={inputStyle}
               />
             </div>
-          </>
+          </div>
         )}
-
         <div>
           <label style={labelStyle}>Wastage %</label>
           <select
@@ -347,18 +337,13 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom }
         </div>
       </div>
 
-      {/* Areas Section */}
-      <div>
-        <div style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "12px",
-        }}>
+      {/* Areas */}
+      <div style={{ marginBottom: "16px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
           <span style={{
             color: "#94a3b8",
             fontSize: "12px",
-            fontWeight: 700,
+            fontWeight: 600,
             textTransform: "uppercase",
             letterSpacing: "1.5px",
             fontFamily: "'DM Sans', sans-serif",
@@ -403,7 +388,6 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom }
         border: "1px solid rgba(245,158,11,0.2)",
         borderRadius: "12px",
         padding: "16px",
-        marginTop: "16px",
         display: "grid",
         gridTemplateColumns: "1fr 1fr 1fr",
         gap: "12px",
