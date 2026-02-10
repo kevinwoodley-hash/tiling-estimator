@@ -1,6 +1,15 @@
 import { useState } from "react";
+import { Download, Share2, Calculator, Package, DollarSign, User, Mail, Phone, MapPin } from "lucide-react";
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
+
+// Material consumption rates per m²
+const MATERIAL_RATES = {
+  adhesive: 3.5, // kg per m²
+  grout: 0.5, // kg per m²
+  primer: 0.15, // L per m²
+  sealer: 0.1, // L per m²
+};
 
 const AREA_TYPES = [
   "Main Floor",
@@ -443,6 +452,26 @@ const selectStyle = {
 
 export default function App() {
   const [rooms, setRooms] = useState([defaultRoom()]);
+  const [showProfessional, setShowProfessional] = useState(false);
+  
+  // Customer Information
+  const [customer, setCustomer] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+  });
+
+  // Pricing
+  const [pricing, setPricing] = useState({
+    tilePricePerSqm: "",
+    labourPricePerSqm: "",
+    adhesivePrice: "",
+    groutPrice: "",
+    primerPrice: "",
+    sealerPrice: "",
+    markup: 15,
+  });
 
   const addRoom = () => {
     setRooms((prev) => [
@@ -484,6 +513,138 @@ export default function App() {
     { netArea: 0, totalArea: 0, totalTiles: 0, totalAreas: 0 }
   );
 
+  // Material calculations
+  const materials = {
+    adhesive: (grandTotals.totalArea * MATERIAL_RATES.adhesive).toFixed(1),
+    grout: (grandTotals.totalArea * MATERIAL_RATES.grout).toFixed(1),
+    primer: (grandTotals.totalArea * MATERIAL_RATES.primer).toFixed(1),
+    sealer: (grandTotals.totalArea * MATERIAL_RATES.sealer).toFixed(1),
+  };
+
+  // Cost calculations
+  const costs = {
+    tiles: grandTotals.totalArea * (parseFloat(pricing.tilePricePerSqm) || 0),
+    labour: grandTotals.totalArea * (parseFloat(pricing.labourPricePerSqm) || 0),
+    adhesive: parseFloat(materials.adhesive) * (parseFloat(pricing.adhesivePrice) || 0),
+    grout: parseFloat(materials.grout) * (parseFloat(pricing.groutPrice) || 0),
+    primer: parseFloat(materials.primer) * (parseFloat(pricing.primerPrice) || 0),
+    sealer: parseFloat(materials.sealer) * (parseFloat(pricing.sealerPrice) || 0),
+  };
+
+  const subtotal = Object.values(costs).reduce((sum, cost) => sum + cost, 0);
+  const markupAmount = subtotal * (pricing.markup / 100);
+  const total = subtotal + markupAmount;
+
+  // Export to WhatsApp
+  const exportToWhatsApp = () => {
+    let message = `📋 *TILING ESTIMATE*\n\n`;
+    
+    if (customer.name) {
+      message += `👤 *Customer:* ${customer.name}\n`;
+      if (customer.phone) message += `📞 ${customer.phone}\n`;
+      if (customer.email) message += `📧 ${customer.email}\n`;
+      if (customer.address) message += `📍 ${customer.address}\n`;
+      message += `\n`;
+    }
+
+    message += `📐 *PROJECT SUMMARY*\n`;
+    message += `Rooms: ${rooms.length}\n`;
+    message += `Total Areas: ${grandTotals.totalAreas}\n`;
+    message += `Net Area: ${grandTotals.netArea.toFixed(2)} m²\n`;
+    message += `Total Area (inc. wastage): ${grandTotals.totalArea.toFixed(2)} m²\n`;
+    message += `Tiles Required: ${grandTotals.totalTiles}\n\n`;
+
+    message += `📦 *MATERIALS NEEDED*\n`;
+    message += `Adhesive: ${materials.adhesive} kg\n`;
+    message += `Grout: ${materials.grout} kg\n`;
+    message += `Primer: ${materials.primer} L\n`;
+    message += `Sealer: ${materials.sealer} L\n`;
+
+    if (subtotal > 0) {
+      message += `\n💰 *COST BREAKDOWN*\n`;
+      if (costs.tiles > 0) message += `Tiles: £${costs.tiles.toFixed(2)}\n`;
+      if (costs.labour > 0) message += `Labour: £${costs.labour.toFixed(2)}\n`;
+      if (costs.adhesive > 0) message += `Adhesive: £${costs.adhesive.toFixed(2)}\n`;
+      if (costs.grout > 0) message += `Grout: £${costs.grout.toFixed(2)}\n`;
+      if (costs.primer > 0) message += `Primer: £${costs.primer.toFixed(2)}\n`;
+      if (costs.sealer > 0) message += `Sealer: £${costs.sealer.toFixed(2)}\n`;
+      message += `\nSubtotal: £${subtotal.toFixed(2)}\n`;
+      message += `Markup (${pricing.markup}%): £${markupAmount.toFixed(2)}\n`;
+      message += `*TOTAL: £${total.toFixed(2)}*`;
+    }
+
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/?text=${encodedMessage}`;
+    window.open(whatsappUrl, '_blank');
+  };
+
+  // Export to text file
+  const exportToFile = () => {
+    let content = `TILING ESTIMATE\n${'='.repeat(50)}\n\n`;
+    
+    if (customer.name) {
+      content += `CUSTOMER INFORMATION\n`;
+      content += `Name: ${customer.name}\n`;
+      if (customer.phone) content += `Phone: ${customer.phone}\n`;
+      if (customer.email) content += `Email: ${customer.email}\n`;
+      if (customer.address) content += `Address: ${customer.address}\n`;
+      content += `\n`;
+    }
+
+    content += `PROJECT SUMMARY\n${'-'.repeat(50)}\n`;
+    content += `Rooms: ${rooms.length}\n`;
+    content += `Total Areas: ${grandTotals.totalAreas}\n`;
+    content += `Net Area: ${grandTotals.netArea.toFixed(2)} m²\n`;
+    content += `Total Area (inc. wastage): ${grandTotals.totalArea.toFixed(2)} m²\n`;
+    content += `Tiles Required: ${grandTotals.totalTiles}\n\n`;
+
+    rooms.forEach((room, idx) => {
+      const roomTotal = room.areas.reduce((sum, a) => {
+        return sum + (parseFloat(a.length) || 0) * (parseFloat(a.width) || 0);
+      }, 0);
+      content += `ROOM ${idx + 1}: ${room.name}\n`;
+      content += `  Total Area: ${roomTotal.toFixed(2)} m²\n`;
+      room.areas.forEach((area, aIdx) => {
+        const sqm = (parseFloat(area.length) || 0) * (parseFloat(area.width) || 0);
+        const areaName = area.type === "Custom Area" ? area.customName || "Custom Area" : area.type;
+        content += `  ${String.fromCharCode(65 + aIdx)}. ${areaName}: ${area.length}m × ${area.width}m = ${sqm.toFixed(2)} m²\n`;
+      });
+      content += `\n`;
+    });
+
+    content += `MATERIALS NEEDED\n${'-'.repeat(50)}\n`;
+    content += `Adhesive: ${materials.adhesive} kg\n`;
+    content += `Grout: ${materials.grout} kg\n`;
+    content += `Primer: ${materials.primer} L\n`;
+    content += `Sealer: ${materials.sealer} L\n`;
+
+    if (subtotal > 0) {
+      content += `\nCOST BREAKDOWN\n${'-'.repeat(50)}\n`;
+      if (costs.tiles > 0) content += `Tiles: £${costs.tiles.toFixed(2)}\n`;
+      if (costs.labour > 0) content += `Labour: £${costs.labour.toFixed(2)}\n`;
+      if (costs.adhesive > 0) content += `Adhesive: £${costs.adhesive.toFixed(2)}\n`;
+      if (costs.grout > 0) content += `Grout: £${costs.grout.toFixed(2)}\n`;
+      if (costs.primer > 0) content += `Primer: £${costs.primer.toFixed(2)}\n`;
+      if (costs.sealer > 0) content += `Sealer: £${costs.sealer.toFixed(2)}\n`;
+      content += `\nSubtotal: £${subtotal.toFixed(2)}\n`;
+      content += `Markup (${pricing.markup}%): £${markupAmount.toFixed(2)}\n`;
+      content += `TOTAL: £${total.toFixed(2)}\n`;
+    }
+
+    content += `\n${'='.repeat(50)}\n`;
+    content += `Generated: ${new Date().toLocaleString()}\n`;
+
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tiling-estimate-${customer.name || 'quote'}-${Date.now()}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div style={{
       minHeight: "100vh",
@@ -523,10 +684,390 @@ export default function App() {
             Tiling Estimator
           </h1>
         </div>
-        <p style={{ color: "#64748b", fontSize: "14px", margin: 0 }}>
+        <p style={{ color: "#64748b", fontSize: "14px", margin: "0 0 12px 0" }}>
           Add rooms and multiple areas per room for accurate tile calculations
         </p>
+        <button
+          onClick={() => setShowProfessional(!showProfessional)}
+          style={{
+            background: showProfessional 
+              ? "linear-gradient(135deg, #f59e0b, #d97706)" 
+              : "rgba(245,158,11,0.15)",
+            border: "1px solid rgba(245,158,11,0.3)",
+            color: showProfessional ? "#000" : "#f59e0b",
+            borderRadius: "8px",
+            padding: "8px 16px",
+            cursor: "pointer",
+            fontSize: "13px",
+            fontWeight: 600,
+            fontFamily: "'DM Sans', sans-serif",
+            display: "inline-flex",
+            alignItems: "center",
+            gap: "6px",
+            transition: "all 0.2s ease",
+          }}
+        >
+          <Calculator size={16} />
+          {showProfessional ? "Hide" : "Show"} Professional Mode
+        </button>
       </div>
+
+      {/* Professional Mode Sections */}
+      {showProfessional && (
+        <div style={{ maxWidth: "720px", margin: "0 auto 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+          
+          {/* Customer Information */}
+          <div style={{
+            background: "linear-gradient(160deg, rgba(30,41,59,0.95), rgba(15,23,42,0.98))",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "16px",
+            padding: "20px",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+              <User size={20} color="#f59e0b" />
+              <h3 style={{
+                color: "#f1f5f9",
+                fontSize: "16px",
+                fontWeight: 700,
+                margin: 0,
+                fontFamily: "'DM Sans', sans-serif",
+              }}>
+                Customer Information
+              </h3>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={labelStyle}>Customer Name</label>
+                <input
+                  type="text"
+                  placeholder="John Smith"
+                  value={customer.name}
+                  onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Phone</label>
+                <input
+                  type="tel"
+                  placeholder="07700 900000"
+                  value={customer.phone}
+                  onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Email</label>
+                <input
+                  type="email"
+                  placeholder="john@example.com"
+                  value={customer.email}
+                  onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={labelStyle}>Address</label>
+                <input
+                  type="text"
+                  placeholder="123 High Street, London"
+                  value={customer.address}
+                  onChange={(e) => setCustomer({ ...customer, address: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Materials Summary */}
+          <div style={{
+            background: "linear-gradient(160deg, rgba(30,41,59,0.95), rgba(15,23,42,0.98))",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "16px",
+            padding: "20px",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+              <Package size={20} color="#f59e0b" />
+              <h3 style={{
+                color: "#f1f5f9",
+                fontSize: "16px",
+                fontWeight: 700,
+                margin: 0,
+                fontFamily: "'DM Sans', sans-serif",
+              }}>
+                Materials Required
+              </h3>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
+              <div style={{
+                background: "rgba(245,158,11,0.1)",
+                border: "1px solid rgba(245,158,11,0.2)",
+                borderRadius: "10px",
+                padding: "12px",
+              }}>
+                <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Adhesive</div>
+                <div style={{ color: "#f59e0b", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                  {materials.adhesive}<span style={{ fontSize: "12px", color: "#94a3b8" }}> kg</span>
+                </div>
+              </div>
+              <div style={{
+                background: "rgba(245,158,11,0.1)",
+                border: "1px solid rgba(245,158,11,0.2)",
+                borderRadius: "10px",
+                padding: "12px",
+              }}>
+                <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Grout</div>
+                <div style={{ color: "#f59e0b", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                  {materials.grout}<span style={{ fontSize: "12px", color: "#94a3b8" }}> kg</span>
+                </div>
+              </div>
+              <div style={{
+                background: "rgba(245,158,11,0.1)",
+                border: "1px solid rgba(245,158,11,0.2)",
+                borderRadius: "10px",
+                padding: "12px",
+              }}>
+                <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Primer</div>
+                <div style={{ color: "#f59e0b", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                  {materials.primer}<span style={{ fontSize: "12px", color: "#94a3b8" }}> L</span>
+                </div>
+              </div>
+              <div style={{
+                background: "rgba(245,158,11,0.1)",
+                border: "1px solid rgba(245,158,11,0.2)",
+                borderRadius: "10px",
+                padding: "12px",
+              }}>
+                <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Sealer</div>
+                <div style={{ color: "#f59e0b", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                  {materials.sealer}<span style={{ fontSize: "12px", color: "#94a3b8" }}> L</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Pricing & Costing */}
+          <div style={{
+            background: "linear-gradient(160deg, rgba(30,41,59,0.95), rgba(15,23,42,0.98))",
+            border: "1px solid rgba(255,255,255,0.1)",
+            borderRadius: "16px",
+            padding: "20px",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+              <DollarSign size={20} color="#f59e0b" />
+              <h3 style={{
+                color: "#f1f5f9",
+                fontSize: "16px",
+                fontWeight: 700,
+                margin: 0,
+                fontFamily: "'DM Sans', sans-serif",
+              }}>
+                Pricing & Costs
+              </h3>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+              <div>
+                <label style={labelStyle}>Tile Price (£/m²)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="25.00"
+                  value={pricing.tilePricePerSqm}
+                  onChange={(e) => setPricing({ ...pricing, tilePricePerSqm: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Labour (£/m²)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="35.00"
+                  value={pricing.labourPricePerSqm}
+                  onChange={(e) => setPricing({ ...pricing, labourPricePerSqm: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Adhesive (£/kg)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="2.50"
+                  value={pricing.adhesivePrice}
+                  onChange={(e) => setPricing({ ...pricing, adhesivePrice: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Grout (£/kg)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="3.00"
+                  value={pricing.groutPrice}
+                  onChange={(e) => setPricing({ ...pricing, groutPrice: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Primer (£/L)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="8.00"
+                  value={pricing.primerPrice}
+                  onChange={(e) => setPricing({ ...pricing, primerPrice: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Sealer (£/L)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="12.00"
+                  value={pricing.sealerPrice}
+                  onChange={(e) => setPricing({ ...pricing, sealerPrice: e.target.value })}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Markup %</label>
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  max="100"
+                  placeholder="15"
+                  value={pricing.markup}
+                  onChange={(e) => setPricing({ ...pricing, markup: parseFloat(e.target.value) || 0 })}
+                  style={inputStyle}
+                />
+              </div>
+            </div>
+
+            {/* Cost Summary */}
+            {subtotal > 0 && (
+              <div style={{
+                background: "linear-gradient(135deg, rgba(34,197,94,0.1), rgba(22,163,74,0.05))",
+                border: "1px solid rgba(34,197,94,0.2)",
+                borderRadius: "12px",
+                padding: "16px",
+              }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                  {costs.tiles > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>Tiles</span>
+                      <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{costs.tiles.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {costs.labour > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>Labour</span>
+                      <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{costs.labour.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {costs.adhesive > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>Adhesive</span>
+                      <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{costs.adhesive.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {costs.grout > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>Grout</span>
+                      <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{costs.grout.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {costs.primer > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>Primer</span>
+                      <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{costs.primer.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {costs.sealer > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>Sealer</span>
+                      <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{costs.sealer.toFixed(2)}</span>
+                    </div>
+                  )}
+                  <div style={{ height: "1px", background: "rgba(255,255,255,0.1)", margin: "4px 0" }}></div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>Subtotal</span>
+                    <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{subtotal.toFixed(2)}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>Markup ({pricing.markup}%)</span>
+                    <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{markupAmount.toFixed(2)}</span>
+                  </div>
+                  <div style={{ height: "1px", background: "rgba(34,197,94,0.3)", margin: "4px 0" }}></div>
+                  <div style={{ display: "flex", justifyContent: "space-between" }}>
+                    <span style={{ color: "#22c55e", fontSize: "16px", fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>TOTAL</span>
+                    <span style={{ color: "#22c55e", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>£{total.toFixed(2)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Export Buttons */}
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button
+              onClick={exportToWhatsApp}
+              style={{
+                flex: 1,
+                background: "linear-gradient(135deg, #22c55e, #16a34a)",
+                border: "none",
+                color: "#000",
+                borderRadius: "12px",
+                padding: "12px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: 700,
+                fontFamily: "'DM Sans', sans-serif",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <Share2 size={18} />
+              Share via WhatsApp
+            </button>
+            <button
+              onClick={exportToFile}
+              style={{
+                flex: 1,
+                background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                border: "none",
+                color: "#fff",
+                borderRadius: "12px",
+                padding: "12px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: 700,
+                fontFamily: "'DM Sans', sans-serif",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                transition: "all 0.2s ease",
+              }}
+            >
+              <Download size={18} />
+              Download Estimate
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Grand Summary Bar */}
       <div style={{
