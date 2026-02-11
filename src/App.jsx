@@ -60,7 +60,8 @@ const defaultRoom = () => ({
   surfaceType: "floor", // floor or wall
   calculationMode: "areas", // "areas" or "walls"
   ceilingHeight: "2.4",
-  wallPerimeter: "",
+  roomLength: "",
+  roomWidth: "",
   areas: [defaultArea()],
   tileSize: 5,
   customTileW: "",
@@ -229,7 +230,7 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom }
   };
 
   const totalSqm = room.calculationMode === "walls" 
-    ? (parseFloat(room.wallPerimeter) || 0) * (parseFloat(room.ceilingHeight) || 0)
+    ? 2 * (parseFloat(room.ceilingHeight) || 0) * ((parseFloat(room.roomLength) || 0) + (parseFloat(room.roomWidth) || 0))
     : room.areas.reduce((sum, a) => {
         const l = parseFloat(a.length) || 0;
         const w = parseFloat(a.width) || 0;
@@ -455,26 +456,30 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom }
               <span style={{ fontSize: "16px" }}>📐</span>
               Complete Wall Calculation
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
               <div>
-                <label style={labelStyle}>Room Perimeter (m)</label>
+                <label style={labelStyle}>Room Length (m)</label>
                 <input
                   type="number"
                   step="0.01"
                   min="0"
-                  placeholder="e.g., 12.5"
-                  value={room.wallPerimeter}
-                  onChange={(e) => updateField("wallPerimeter", e.target.value)}
+                  placeholder="e.g., 4.0"
+                  value={room.roomLength}
+                  onChange={(e) => updateField("roomLength", e.target.value)}
                   style={inputStyle}
                 />
-                <div style={{ 
-                  color: "#64748b", 
-                  fontSize: "11px", 
-                  marginTop: "4px",
-                  fontStyle: "italic",
-                }}>
-                  Add all wall lengths together
-                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>Room Width (m)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="e.g., 3.0"
+                  value={room.roomWidth}
+                  onChange={(e) => updateField("roomWidth", e.target.value)}
+                  style={inputStyle}
+                />
               </div>
               <div>
                 <label style={labelStyle}>Ceiling Height (m)</label>
@@ -487,32 +492,44 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom }
                   onChange={(e) => updateField("ceilingHeight", e.target.value)}
                   style={inputStyle}
                 />
-                <div style={{ 
-                  color: "#64748b", 
-                  fontSize: "11px", 
-                  marginTop: "4px",
-                  fontStyle: "italic",
-                }}>
-                  Default: 2.4m
-                </div>
               </div>
             </div>
-            {room.wallPerimeter && room.ceilingHeight && (
+            <div style={{ 
+              color: "#64748b", 
+              fontSize: "11px", 
+              marginTop: "8px",
+              fontStyle: "italic",
+              textAlign: "center",
+            }}>
+              Formula: 2 × Height × (Length + Width)
+            </div>
+            {room.roomLength && room.roomWidth && room.ceilingHeight && (
               <div style={{
                 marginTop: "12px",
                 padding: "12px",
                 background: "rgba(168, 85, 247, 0.15)",
                 borderRadius: "8px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
               }}>
-                <span style={{ color: "#c4b5fd", fontSize: "13px", fontWeight: 600 }}>
-                  Total Wall Area:
-                </span>
-                <span style={{ color: "#a855f7", fontSize: "18px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
-                  {totalSqm.toFixed(2)} m²
-                </span>
+                <div style={{ 
+                  fontSize: "12px", 
+                  color: "#c4b5fd", 
+                  marginBottom: "6px",
+                  fontFamily: "'DM Mono', monospace",
+                }}>
+                  2 × {room.ceilingHeight}m × ({room.roomLength}m + {room.roomWidth}m)
+                </div>
+                <div style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}>
+                  <span style={{ color: "#c4b5fd", fontSize: "13px", fontWeight: 600 }}>
+                    Total Wall Area:
+                  </span>
+                  <span style={{ color: "#a855f7", fontSize: "18px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                    {totalSqm.toFixed(2)} m²
+                  </span>
+                </div>
               </div>
             )}
           </div>
@@ -1097,7 +1114,16 @@ export default function App() {
         return sum + (parseFloat(a.length) || 0) * (parseFloat(a.width) || 0);
       }, 0);
       content += `ROOM ${idx + 1}: ${room.name} (${room.surfaceType === 'floor' ? 'Floor' : 'Wall'})\n`;
-      content += `  Total Area: ${roomTotal.toFixed(2)} m²\n`;
+      
+      if (room.calculationMode === 'walls' && room.surfaceType === 'wall') {
+        const wallArea = 2 * (parseFloat(room.ceilingHeight) || 0) * ((parseFloat(room.roomLength) || 0) + (parseFloat(room.roomWidth) || 0));
+        content += `  Calculation: Complete Walls\n`;
+        content += `  Room Dimensions: ${room.roomLength}m × ${room.roomWidth}m\n`;
+        content += `  Ceiling Height: ${room.ceilingHeight}m\n`;
+        content += `  Total Wall Area: ${wallArea.toFixed(2)} m²\n`;
+      } else {
+        content += `  Total Area: ${roomTotal.toFixed(2)} m²\n`;
+      }
       
       // Show selected options
       const options = [];
@@ -1114,11 +1140,13 @@ export default function App() {
         content += `  Options: ${options.join(', ')}\n`;
       }
       
-      room.areas.forEach((area, aIdx) => {
-        const sqm = (parseFloat(area.length) || 0) * (parseFloat(area.width) || 0);
-        const areaName = area.type === "Custom Area" ? area.customName || "Custom Area" : area.type;
-        content += `  ${String.fromCharCode(65 + aIdx)}. ${areaName}: ${area.length}m × ${area.width}m = ${sqm.toFixed(2)} m²\n`;
-      });
+      if (room.calculationMode === 'areas') {
+        room.areas.forEach((area, aIdx) => {
+          const sqm = (parseFloat(area.length) || 0) * (parseFloat(area.width) || 0);
+          const areaName = area.type === "Custom Area" ? area.customName || "Custom Area" : area.type;
+          content += `  ${String.fromCharCode(65 + aIdx)}. ${areaName}: ${area.length}m × ${area.width}m = ${sqm.toFixed(2)} m²\n`;
+        });
+      }
       content += `\n`;
     });
 
