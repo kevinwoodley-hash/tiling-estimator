@@ -48,9 +48,25 @@ const THEMES = {
 };
 
 // Material consumption rates per m²
+const TROWEL_SIZES = [
+  { label: "6mm Notched", coverage: 2.5, description: "Small tiles (up to 300mm)" },
+  { label: "8mm Notched", coverage: 3.5, description: "Medium tiles (300-450mm)" },
+  { label: "10mm Notched", coverage: 4.5, description: "Large tiles (450-600mm)" },
+  { label: "12mm Notched", coverage: 5.5, description: "Extra large tiles (600mm+)" },
+];
+
+const GROUT_JOINT_WIDTHS = [
+  { label: "1mm", width: 1 },
+  { label: "2mm", width: 2 },
+  { label: "3mm", width: 3 },
+  { label: "4mm", width: 4 },
+  { label: "5mm", width: 5 },
+  { label: "6mm", width: 6 },
+];
+
 const MATERIAL_RATES = {
-  adhesive: 3.5, // kg per m²
-  grout: 0.5, // kg per m²
+  // Adhesive now calculated based on trowel size
+  grout: 0.5, // kg per m² (fallback if not calculated by joint width)
   primer: 0.15, // L per m² (standard primer)
   sealer: 0.1, // L per m²
   // Floor materials
@@ -61,6 +77,8 @@ const MATERIAL_RATES = {
   wallTanking: 0.4, // L per m²
   tileTrim: 4, // linear meters per m² (approximate)
   wallPrimer: 0.2, // L per m²
+  // Grout density for calculations
+  groutDensity: 1.6, // kg per liter
 };
 
 const AREA_TYPES = [
@@ -111,6 +129,8 @@ const defaultRoom = () => ({
   customTileW: "",
   customTileH: "",
   wastage: 10,
+  trowelSize: 1, // Index into TROWEL_SIZES array (default 8mm)
+  groutJointWidth: 1, // Index into GROUT_JOINT_WIDTHS array (default 2mm)
   // Floor options
   useCementBoard: false,
   useDitraMat: false,
@@ -438,6 +458,39 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom, 
           >
             {WASTAGE_OPTIONS.map((w) => (
               <option key={w} value={w}>{w}%</option>
+            ))}
+          </select>
+        </div>
+      </div>
+
+      {/* Trowel Size & Grout Joint */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 1fr",
+        gap: "12px",
+        marginBottom: "16px",
+      }}>
+        <div>
+          <label style={labelStyle}>Trowel Size (Adhesive)</label>
+          <select
+            value={room.trowelSize}
+            onChange={(e) => updateField("trowelSize", parseInt(e.target.value))}
+            style={selectStyle}
+          >
+            {TROWEL_SIZES.map((ts, i) => (
+              <option key={i} value={i}>{ts.label} - {ts.description}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label style={labelStyle}>Grout Joint Width</label>
+          <select
+            value={room.groutJointWidth}
+            onChange={(e) => updateField("groutJointWidth", parseInt(e.target.value))}
+            style={selectStyle}
+          >
+            {GROUT_JOINT_WIDTHS.map((gj, i) => (
+              <option key={i} value={i}>{gj.label}</option>
             ))}
           </select>
         </div>
@@ -1029,9 +1082,50 @@ export default function App() {
   );
 
   // Material calculations
+  // Calculate materials based on room-specific settings
+  let adhesiveTotal = 0;
+  let groutTotal = 0;
+  
+  rooms.forEach((room) => {
+    let roomSqm = 0;
+    
+    // Calculate room area based on calculation mode
+    if (room.calculationMode === "walls" && room.surfaceType === "wall") {
+      roomSqm = 2 * (parseFloat(room.ceilingHeight) || 0) * ((parseFloat(room.roomLength) || 0) + (parseFloat(room.roomWidth) || 0));
+    } else {
+      roomSqm = room.areas.reduce((s, a) => {
+        return s + (parseFloat(a.length) || 0) * (parseFloat(a.width) || 0);
+      }, 0);
+    }
+    
+    const wastageMultiplier = 1 + room.wastage / 100;
+    const withWastage = roomSqm * wastageMultiplier;
+    
+    // Calculate adhesive based on trowel size
+    const trowelInfo = TROWEL_SIZES[room.trowelSize] || TROWEL_SIZES[1];
+    adhesiveTotal += withWastage * trowelInfo.coverage;
+    
+    // Calculate grout based on tile size and joint width
+    const tileInfo = TILE_SIZES[room.tileSize];
+    const isCustom = tileInfo.label === "Custom";
+    const tileW = isCustom ? (parseFloat(room.customTileW) || 300) : (tileInfo.w * 1000); // Convert to mm
+    const tileH = isCustom ? (parseFloat(room.customTileH) || 300) : (tileInfo.h * 1000); // Convert to mm
+    const tileDepth = 10; // Assume 10mm tile depth
+    const jointWidth = GROUT_JOINT_WIDTHS[room.groutJointWidth]?.width || 2;
+    
+    // Grout calculation formula: (Length + Width) / (Length × Width) × Joint Width × Tile Depth × Grout Density
+    // This gives kg per tile, then multiply by number of tiles
+    const groutPerTile = ((tileW + tileH) / (tileW * tileH)) * jointWidth * tileDepth * MATERIAL_RATES.groutDensity / 1000;
+    const tileArea = (tileW / 1000) * (tileH / 1000); // Back to m²
+    const numTiles = withWastage / tileArea;
+    groutTotal += numTiles * groutPerTile;
+  });
+  
   const materials = {
-    adhesive: (grandTotals.totalArea * MATERIAL_RATES.adhesive).toFixed(1),
-    grout: (grandTotals.totalArea * MATERIAL_RATES.grout).toFixed(1),
+    adhesive: adhesiveTotal.toFixed(1),
+    adhesiveBags: Math.ceil(adhesiveTotal / 20), // 20kg bags
+    grout: groutTotal.toFixed(1),
+    groutBags: Math.ceil(groutTotal / 2.5), // 2.5kg bags
     primer: (grandTotals.totalArea * MATERIAL_RATES.primer).toFixed(1),
     sealer: (grandTotals.totalArea * MATERIAL_RATES.sealer).toFixed(1),
   };
@@ -1158,7 +1252,7 @@ export default function App() {
       if (costs.adhesive > 0) {
         lineItems.push({
           item_type: "Products",
-          description: `Adhesive (${materials.adhesive} kg)`,
+          description: `Adhesive - ${materials.adhesiveBags} × 20kg bags (${materials.adhesive} kg)`,
           quantity: parseFloat(materials.adhesive),
           price: parseFloat(pricing.adhesivePrice) || 0,
         });
@@ -1167,7 +1261,7 @@ export default function App() {
       if (costs.grout > 0) {
         lineItems.push({
           item_type: "Products",
-          description: `Grout (${materials.grout} kg)`,
+          description: `Grout - ${materials.groutBags} × 2.5kg bags (${materials.grout} kg)`,
           quantity: parseFloat(materials.grout),
           price: parseFloat(pricing.groutPrice) || 0,
         });
@@ -1325,8 +1419,8 @@ export default function App() {
     message += `Tiles Required: ${grandTotals.totalTiles}\n\n`;
 
     message += `📦 *MATERIALS NEEDED*\n`;
-    message += `Adhesive: ${materials.adhesive} kg\n`;
-    message += `Grout: ${materials.grout} kg\n`;
+    message += `Adhesive: ${materials.adhesiveBags} × 20kg bags (${materials.adhesive} kg)\n`;
+    message += `Grout: ${materials.groutBags} × 2.5kg bags (${materials.grout} kg)\n`;
     message += `Primer: ${materials.primer} L\n`;
     message += `Sealer: ${materials.sealer} L\n`;
     
@@ -1456,8 +1550,8 @@ export default function App() {
 
     content += `MATERIALS NEEDED\n${'-'.repeat(60)}\n`;
     content += `Standard Materials:\n`;
-    content += `  Adhesive: ${materials.adhesive} kg\n`;
-    content += `  Grout: ${materials.grout} kg\n`;
+    content += `  Adhesive: ${materials.adhesiveBags} × 20kg bags (${materials.adhesive} kg total)\n`;
+    content += `  Grout: ${materials.groutBags} × 2.5kg bags (${materials.grout} kg total)\n`;
     content += `  Primer: ${materials.primer} L\n`;
     content += `  Sealer: ${materials.sealer} L\n`;
     
@@ -1653,6 +1747,82 @@ export default function App() {
             <Calculator size={18} />
             {showProfessional ? "Hide" : "Show"} Professional Mode
           </button>
+        </div>
+      </div>
+
+      {/* Customer Information - Always Visible */}
+      <div style={{ maxWidth: "900px", margin: "0 auto 32px" }}>
+        <div style={{
+          background: theme.cardBg,
+          backdropFilter: "blur(20px)",
+          border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.1)",
+          borderRadius: "20px",
+          padding: "24px",
+          boxShadow: styleTheme === "minimal" ? "0 8px 32px rgba(0, 0, 0, 0.08)" : "0 8px 32px rgba(0, 0, 0, 0.3)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+            <div style={{
+              background: theme.primary,
+              borderRadius: "10px",
+              padding: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}>
+              <User size={20} color={styleTheme === "minimal" ? theme.textPrimary : "#000"} />
+            </div>
+            <h3 style={{
+              color: theme.textPrimary,
+              fontSize: "18px",
+              fontWeight: 700,
+              margin: 0,
+              fontFamily: "'DM Sans', sans-serif",
+            }}>
+              Customer Information
+            </h3>
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={{...labelStyle, color: theme.textSecondary}}>Customer Name</label>
+              <input
+                type="text"
+                placeholder="John Smith"
+                value={customer.name}
+                onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
+                style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+              />
+            </div>
+            <div>
+              <label style={{...labelStyle, color: theme.textSecondary}}>Phone</label>
+              <input
+                type="tel"
+                placeholder="07700 900000"
+                value={customer.phone}
+                onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
+                style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+              />
+            </div>
+            <div>
+              <label style={{...labelStyle, color: theme.textSecondary}}>Email</label>
+              <input
+                type="email"
+                placeholder="john@example.com"
+                value={customer.email}
+                onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
+                style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+              />
+            </div>
+            <div style={{ gridColumn: "1 / -1" }}>
+              <label style={{...labelStyle, color: theme.textSecondary}}>Address</label>
+              <input
+                type="text"
+                placeholder="123 High Street, London"
+                value={customer.address}
+                onChange={(e) => setCustomer({ ...customer, address: e.target.value })}
+                style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+              />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -2309,80 +2479,6 @@ export default function App() {
             </div>
           </div>
           
-          {/* Customer Information */}
-          <div style={{
-            background: "linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8))",
-            backdropFilter: "blur(20px)",
-            border: "1px solid rgba(148, 163, 184, 0.1)",
-            borderRadius: "20px",
-            padding: "24px",
-            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
-          }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
-              <div style={{
-                background: "linear-gradient(135deg, #f59e0b 0%, #fb923c 100%)",
-                borderRadius: "10px",
-                padding: "8px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}>
-                <User size={20} color="#000" />
-              </div>
-              <h3 style={{
-                color: "#ffffff",
-                fontSize: "18px",
-                fontWeight: 700,
-                margin: 0,
-                fontFamily: "'DM Sans', sans-serif",
-              }}>
-                Customer Information
-              </h3>
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <label style={labelStyle}>Customer Name</label>
-                <input
-                  type="text"
-                  placeholder="John Smith"
-                  value={customer.name}
-                  onChange={(e) => setCustomer({ ...customer, name: e.target.value })}
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Phone</label>
-                <input
-                  type="tel"
-                  placeholder="07700 900000"
-                  value={customer.phone}
-                  onChange={(e) => setCustomer({ ...customer, phone: e.target.value })}
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Email</label>
-                <input
-                  type="email"
-                  placeholder="john@example.com"
-                  value={customer.email}
-                  onChange={(e) => setCustomer({ ...customer, email: e.target.value })}
-                  style={inputStyle}
-                />
-              </div>
-              <div style={{ gridColumn: "1 / -1" }}>
-                <label style={labelStyle}>Address</label>
-                <input
-                  type="text"
-                  placeholder="123 High Street, London"
-                  value={customer.address}
-                  onChange={(e) => setCustomer({ ...customer, address: e.target.value })}
-                  style={inputStyle}
-                />
-              </div>
-            </div>
-          </div>
-
           {/* Materials Summary */}
           <div style={{
             background: "linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8))",
@@ -2426,7 +2522,10 @@ export default function App() {
                 }}>
                   <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Adhesive</div>
                   <div style={{ color: "#f59e0b", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
-                    {materials.adhesive}<span style={{ fontSize: "12px", color: "#94a3b8" }}> kg</span>
+                    {materials.adhesiveBags}<span style={{ fontSize: "12px", color: "#94a3b8" }}> × 20kg bags</span>
+                  </div>
+                  <div style={{ color: "#64748b", fontSize: "10px", marginTop: "4px", fontFamily: "'DM Sans', sans-serif" }}>
+                    ({materials.adhesive} kg total)
                   </div>
                 </div>
                 <div style={{
@@ -2437,7 +2536,10 @@ export default function App() {
                 }}>
                   <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Grout</div>
                   <div style={{ color: "#f59e0b", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
-                    {materials.grout}<span style={{ fontSize: "12px", color: "#94a3b8" }}> kg</span>
+                    {materials.groutBags}<span style={{ fontSize: "12px", color: "#94a3b8" }}> × 2.5kg bags</span>
+                  </div>
+                  <div style={{ color: "#64748b", fontSize: "10px", marginTop: "4px", fontFamily: "'DM Sans', sans-serif" }}>
+                    ({materials.grout} kg total)
                   </div>
                 </div>
                 <div style={{
