@@ -17,12 +17,43 @@ A professional tiling calculator that allows you to calculate tile requirements 
 
 ### Professional Mode Features
 - **Customer Management**: Store customer name, phone, email, and address
+- **Business Branding**: Add company logo, VAT number, and business details
+- **FreeAgent Integration**: Export quotes directly to FreeAgent accounting software
 - **Material Calculations**: Automatic calculation of adhesive, grout, primer, and sealer requirements
-- **Cost Breakdown**: Complete pricing with tiles, labour, and materials
+- **Cost Breakdown**: Complete pricing with day rate, labour, and materials
+- **VAT Support**: Toggle VAT on/off with adjustable rate (default 20%)
 - **Markup Management**: Adjustable profit margin percentage
 - **WhatsApp Export**: Share quotes directly via WhatsApp
-- **File Export**: Download detailed estimates as text files
+- **File Export**: Download detailed estimates as text files with branding
 - **Professional Summary**: Grand totals across all rooms and materials
+
+## 🔗 FreeAgent Integration
+
+### Quick Setup
+1. Enable **Professional Mode** in the app
+2. Navigate to **FreeAgent Integration** section
+3. Get your Personal Access Token:
+   - Log in to [FreeAgent](https://www.freeagent.com)
+   - Go to **Settings** → **Developer API**
+   - Click **"Create a new app"** or use existing
+   - Generate a **Personal Access Token**
+   - Copy token into app
+
+### What Gets Exported
+✅ **Complete Invoice/Quote** created in FreeAgent
+✅ **All line items**: Day rate, labour, materials
+✅ **Customer details** automatically added
+✅ **VAT calculated** based on your settings
+✅ **Project reference** with room count and total area
+✅ **Payment terms** set to 30 days
+
+### Benefits
+- 🚀 Instant invoice creation from quotes
+- 💷 Automatic VAT handling
+- 👥 Customer tracking in FreeAgent
+- 📊 Accurate financial records
+- ⏱️ Saves hours of manual data entry
+- 🔒 Secure API connection
 
 ### Professional Design
 - Clean, modern interface with gradient styling
