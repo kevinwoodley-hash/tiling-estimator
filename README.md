@@ -7,6 +7,9 @@ A professional tiling calculator that allows you to calculate tile requirements 
 ### Core Calculator Features
 - **Multi-Room Support**: Add unlimited rooms to your project
 - **Multiple Areas Per Room**: Break down complex spaces into separate areas (main floor, alcoves, window recesses, etc.)
+- **Surface Type Selection**: Choose between Floor or Wall for each room
+- **Floor-Specific Materials**: Cement board, Ditra mat, floor tanking
+- **Wall-Specific Materials**: Wall tanking, tile trim, wall primer
 - **Flexible Tile Sizes**: Pre-configured common sizes plus custom tile dimensions
 - **Wastage Calculation**: Adjustable wastage percentage (5-20%)
 - **Real-Time Calculations**: Instant updates for area, tiles needed, and total quantities
@@ -162,13 +165,18 @@ tiling-estimator/
 
 1. **Add Rooms**: Click "+ Add Room" to create a new room
 2. **Name Your Room**: Click on the room name to edit it
-3. **Configure Tile Settings**: Select tile size and wastage percentage
-4. **Add Areas**: Click "+ Add Area" within a room to add separate areas
-5. **Input Dimensions**: Enter length and width in meters for each area
-6. **View Results**: See real-time calculations for:
+3. **Select Surface Type**: Choose "Floor" or "Wall" for the room
+4. **Select Material Options**: 
+   - **For Floors**: Cement board, Ditra mat, floor tanking
+   - **For Walls**: Wall tanking, tile trim, wall primer
+5. **Configure Tile Settings**: Select tile size and wastage percentage
+6. **Add Areas**: Click "+ Add Area" within a room to add separate areas
+7. **Input Dimensions**: Enter length and width in meters for each area
+8. **View Results**: See real-time calculations for:
    - Net area per room
    - Total area including wastage
    - Number of tiles needed
+   - Surface-specific materials
    - Grand totals across all rooms
 
 ### Professional Mode
@@ -180,14 +188,18 @@ Click "Show Professional Mode" to access advanced features:
    - Information automatically included in exports
 
 2. **Materials Required**
-   - View automatic calculations for:
+   - View automatic calculations for standard materials:
      - Adhesive (3.5 kg/m²)
      - Grout (0.5 kg/m²)
      - Primer (0.15 L/m²)
      - Sealer (0.1 L/m²)
+   - View surface-specific materials when selected:
+     - **Floor**: Cement board, Ditra mat, floor tanking
+     - **Wall**: Wall tanking, tile trim, wall primer
 
 3. **Pricing & Costs**
-   - Enter prices for tiles, labour, and materials
+   - Enter prices for tiles, labour, and all materials
+   - Surface-specific material pricing appears automatically when selected
    - Set your markup percentage
    - View complete cost breakdown with subtotal and total
 
@@ -204,10 +216,21 @@ Click "Show Professional Mode" to access advanced features:
 - **Tiles Required**: Rounded up (Total area with wastage ÷ single tile area)
 
 ### Material Requirements (Industry Standard Rates)
+**Standard Materials (All Surfaces):**
 - **Adhesive**: 3.5 kg per m²
 - **Grout**: 0.5 kg per m²
 - **Primer**: 0.15 L per m²
 - **Sealer**: 0.1 L per m²
+
+**Floor-Specific Materials:**
+- **Cement Board**: 1 board per m² (600x1200mm boards)
+- **Ditra Mat**: 1.1 m² per m² (includes 10% wastage)
+- **Floor Tanking**: 0.5 L per m²
+
+**Wall-Specific Materials:**
+- **Wall Tanking**: 0.4 L per m²
+- **Tile Trim**: 4 linear meters per m² (approximate)
+- **Wall Primer**: 0.2 L per m²
 
 ### Cost Calculations
 - **Line Items**: Tiles, Labour, Adhesive, Grout, Primer, Sealer
