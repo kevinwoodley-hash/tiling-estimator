@@ -3,6 +3,50 @@ import { Download, Share2, Calculator, Package, DollarSign, User, Mail, Phone, M
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
+// Theme configurations
+const THEMES = {
+  modern: {
+    name: "Modern Dark",
+    background: "linear-gradient(180deg, #0a0e1a 0%, #1a1f35 50%, #0f1419 100%)",
+    primary: "linear-gradient(135deg, #f59e0b 0%, #fb923c 100%)",
+    primaryColor: "#fb923c",
+    cardBg: "linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8))",
+    textPrimary: "#ffffff",
+    textSecondary: "#94a3b8",
+    accent: "#34d399",
+  },
+  classic: {
+    name: "Classic Blue",
+    background: "linear-gradient(180deg, #1e3a5f 0%, #2d5a8c 50%, #1a2f4a 100%)",
+    primary: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)",
+    primaryColor: "#60a5fa",
+    cardBg: "linear-gradient(145deg, rgba(30, 58, 95, 0.6), rgba(26, 47, 74, 0.8))",
+    textPrimary: "#ffffff",
+    textSecondary: "#93c5fd",
+    accent: "#34d399",
+  },
+  minimal: {
+    name: "Minimal Light",
+    background: "linear-gradient(180deg, #f8fafc 0%, #e2e8f0 50%, #f1f5f9 100%)",
+    primary: "linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%)",
+    primaryColor: "#0ea5e9",
+    cardBg: "linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(248, 250, 252, 0.95))",
+    textPrimary: "#0f172a",
+    textSecondary: "#475569",
+    accent: "#10b981",
+  },
+  sunset: {
+    name: "Sunset",
+    background: "linear-gradient(180deg, #1a0d2e 0%, #2d1b3d 50%, #1a0f24 100%)",
+    primary: "linear-gradient(135deg, #f97316 0%, #fb923c 100%)",
+    primaryColor: "#fb923c",
+    cardBg: "linear-gradient(145deg, rgba(45, 27, 61, 0.6), rgba(26, 15, 36, 0.8))",
+    textPrimary: "#ffffff",
+    textSecondary: "#c4b5fd",
+    accent: "#fbbf24",
+  },
+};
+
 // Material consumption rates per m²
 const MATERIAL_RATES = {
   adhesive: 3.5, // kg per m²
@@ -203,7 +247,7 @@ function AreaCard({ area, index, onUpdate, onRemove, canRemove }) {
   );
 }
 
-function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom }) {
+function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom, theme }) {
   const addArea = () => {
     onUpdateRoom(room.id, {
       ...room,
@@ -885,6 +929,27 @@ const selectStyle = {
 export default function App() {
   const [rooms, setRooms] = useState([defaultRoom()]);
   const [showProfessional, setShowProfessional] = useState(false);
+  const [styleTheme, setStyleTheme] = useState("modern"); // modern, classic, minimal
+  
+  // Business Branding
+  const [businessBranding, setBusinessBranding] = useState({
+    companyName: "",
+    logo: "", // base64 encoded image
+    phone: "",
+    email: "",
+    website: "",
+    address: "",
+    vatNumber: "",
+    registrationNumber: "",
+  });
+  
+  // FreeAgent Integration
+  const [freeAgent, setFreeAgent] = useState({
+    apiUrl: "https://api.freeagent.com/v2",
+    accessToken: "",
+    connected: false,
+    lastSync: null,
+  });
   
   // Customer Information
   const [customer, setCustomer] = useState({
@@ -894,9 +959,9 @@ export default function App() {
     address: "",
   });
 
-  // Pricing
+  // Pricing - now editable by all users
   const [pricing, setPricing] = useState({
-    tilePricePerSqm: "",
+    dayRate: "",
     labourPricePerSqm: "",
     adhesivePrice: "",
     groutPrice: "",
@@ -911,6 +976,8 @@ export default function App() {
     tileTrimPrice: "",
     wallPrimerPrice: "",
     markup: 15,
+    includeVAT: false,
+    vatRate: 20,
   });
 
   const addRoom = () => {
@@ -931,9 +998,17 @@ export default function App() {
   // Grand totals
   const grandTotals = rooms.reduce(
     (acc, room) => {
-      const roomSqm = room.areas.reduce((s, a) => {
-        return s + (parseFloat(a.length) || 0) * (parseFloat(a.width) || 0);
-      }, 0);
+      let roomSqm = 0;
+      
+      // Calculate room area based on calculation mode
+      if (room.calculationMode === "walls" && room.surfaceType === "wall") {
+        roomSqm = 2 * (parseFloat(room.ceilingHeight) || 0) * ((parseFloat(room.roomLength) || 0) + (parseFloat(room.roomWidth) || 0));
+      } else {
+        roomSqm = room.areas.reduce((s, a) => {
+          return s + (parseFloat(a.length) || 0) * (parseFloat(a.width) || 0);
+        }, 0);
+      }
+      
       const tileInfo = TILE_SIZES[room.tileSize];
       const isCustom = tileInfo.label === "Custom";
       const tileW = isCustom ? (parseFloat(room.customTileW) || 0) / 1000 : tileInfo.w;
@@ -970,9 +1045,17 @@ export default function App() {
   let wallPrimerTotal = 0;
 
   rooms.forEach((room) => {
-    const roomSqm = room.areas.reduce((s, a) => {
-      return s + (parseFloat(a.length) || 0) * (parseFloat(a.width) || 0);
-    }, 0);
+    let roomSqm = 0;
+    
+    // Calculate room area based on calculation mode
+    if (room.calculationMode === "walls" && room.surfaceType === "wall") {
+      roomSqm = 2 * (parseFloat(room.ceilingHeight) || 0) * ((parseFloat(room.roomLength) || 0) + (parseFloat(room.roomWidth) || 0));
+    } else {
+      roomSqm = room.areas.reduce((s, a) => {
+        return s + (parseFloat(a.length) || 0) * (parseFloat(a.width) || 0);
+      }, 0);
+    }
+    
     const wastageMultiplier = 1 + room.wastage / 100;
     const withWastage = roomSqm * wastageMultiplier;
 
@@ -998,7 +1081,7 @@ export default function App() {
 
   // Cost calculations
   const costs = {
-    tiles: grandTotals.totalArea * (parseFloat(pricing.tilePricePerSqm) || 0),
+    dayRate: parseFloat(pricing.dayRate) || 0,
     labour: grandTotals.totalArea * (parseFloat(pricing.labourPricePerSqm) || 0),
     adhesive: parseFloat(materials.adhesive) * (parseFloat(pricing.adhesivePrice) || 0),
     grout: parseFloat(materials.grout) * (parseFloat(pricing.groutPrice) || 0),
@@ -1016,11 +1099,215 @@ export default function App() {
 
   const subtotal = Object.values(costs).reduce((sum, cost) => sum + cost, 0);
   const markupAmount = subtotal * (pricing.markup / 100);
-  const total = subtotal + markupAmount;
+  const subtotalWithMarkup = subtotal + markupAmount;
+  const vatAmount = pricing.includeVAT ? subtotalWithMarkup * (pricing.vatRate / 100) : 0;
+  const total = subtotalWithMarkup + vatAmount;
+
+  // Get current theme
+  const theme = THEMES[styleTheme];
+
+  // Handle logo upload
+  const handleLogoUpload = (e) => {
+    const file = e.target.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBusinessBranding({ ...businessBranding, logo: reader.result });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Export to FreeAgent
+  const exportToFreeAgent = async () => {
+    if (!freeAgent.accessToken) {
+      alert('Please configure your FreeAgent access token in Professional Mode settings.');
+      return;
+    }
+
+    if (!customer.name || !customer.email) {
+      alert('Please enter customer name and email before exporting to FreeAgent.');
+      return;
+    }
+
+    try {
+      // Format line items for FreeAgent
+      const lineItems = [];
+      
+      // Add day rate if set
+      if (costs.dayRate > 0) {
+        lineItems.push({
+          item_type: "Hours",
+          description: "Day Rate",
+          quantity: 1,
+          price: costs.dayRate,
+        });
+      }
+      
+      // Add labour
+      if (costs.labour > 0) {
+        lineItems.push({
+          item_type: "Hours",
+          description: `Tiling Labour (${grandTotals.totalArea.toFixed(2)} m²)`,
+          quantity: grandTotals.totalArea,
+          price: parseFloat(pricing.labourPricePerSqm) || 0,
+        });
+      }
+      
+      // Add materials
+      if (costs.adhesive > 0) {
+        lineItems.push({
+          item_type: "Products",
+          description: `Adhesive (${materials.adhesive} kg)`,
+          quantity: parseFloat(materials.adhesive),
+          price: parseFloat(pricing.adhesivePrice) || 0,
+        });
+      }
+      
+      if (costs.grout > 0) {
+        lineItems.push({
+          item_type: "Products",
+          description: `Grout (${materials.grout} kg)`,
+          quantity: parseFloat(materials.grout),
+          price: parseFloat(pricing.groutPrice) || 0,
+        });
+      }
+      
+      if (costs.primer > 0) {
+        lineItems.push({
+          item_type: "Products",
+          description: `Primer (${materials.primer} L)`,
+          quantity: parseFloat(materials.primer),
+          price: parseFloat(pricing.primerPrice) || 0,
+        });
+      }
+      
+      if (costs.sealer > 0) {
+        lineItems.push({
+          item_type: "Products",
+          description: `Sealer (${materials.sealer} L)`,
+          quantity: parseFloat(materials.sealer),
+          price: parseFloat(pricing.sealerPrice) || 0,
+        });
+      }
+      
+      // Add floor materials
+      if (costs.cementBoard > 0) {
+        lineItems.push({
+          item_type: "Products",
+          description: `Cement Board (${surfaceMaterials.cementBoard} m²)`,
+          quantity: parseFloat(surfaceMaterials.cementBoard),
+          price: parseFloat(pricing.cementBoardPrice) || 0,
+        });
+      }
+      
+      if (costs.ditraMat > 0) {
+        lineItems.push({
+          item_type: "Products",
+          description: `Ditra Mat (${surfaceMaterials.ditraMat} m²)`,
+          quantity: parseFloat(surfaceMaterials.ditraMat),
+          price: parseFloat(pricing.ditraMatPrice) || 0,
+        });
+      }
+      
+      if (costs.floorTanking > 0) {
+        lineItems.push({
+          item_type: "Products",
+          description: `Floor Tanking (${surfaceMaterials.floorTanking} L)`,
+          quantity: parseFloat(surfaceMaterials.floorTanking),
+          price: parseFloat(pricing.floorTankingPrice) || 0,
+        });
+      }
+      
+      // Add wall materials
+      if (costs.wallTanking > 0) {
+        lineItems.push({
+          item_type: "Products",
+          description: `Wall Tanking (${surfaceMaterials.wallTanking} L)`,
+          quantity: parseFloat(surfaceMaterials.wallTanking),
+          price: parseFloat(pricing.wallTankingPrice) || 0,
+        });
+      }
+      
+      if (costs.tileTrim > 0) {
+        lineItems.push({
+          item_type: "Products",
+          description: `Tile Trim (${surfaceMaterials.tileTrim} m)`,
+          quantity: parseFloat(surfaceMaterials.tileTrim),
+          price: parseFloat(pricing.tileTrimPrice) || 0,
+        });
+      }
+      
+      if (costs.wallPrimer > 0) {
+        lineItems.push({
+          item_type: "Products",
+          description: `Wall Primer (${surfaceMaterials.wallPrimer} L)`,
+          quantity: parseFloat(surfaceMaterials.wallPrimer),
+          price: parseFloat(pricing.wallPrimerPrice) || 0,
+        });
+      }
+
+      // Add markup as separate line if present
+      if (markupAmount > 0) {
+        lineItems.push({
+          item_type: "Products",
+          description: `Markup (${pricing.markup}%)`,
+          quantity: 1,
+          price: markupAmount,
+        });
+      }
+
+      // Create invoice/quote payload for FreeAgent
+      const invoiceData = {
+        invoice: {
+          contact: `https://api.freeagent.com/v2/contacts/${customer.email}`, // This would need contact lookup
+          dated_on: new Date().toISOString().split('T')[0],
+          payment_terms_in_days: 30,
+          reference: `Tiling-${Date.now()}`,
+          comments: `Tiling project for ${rooms.length} room(s), ${grandTotals.totalArea.toFixed(2)} m² total area`,
+          invoice_items: lineItems,
+          sales_tax_rate: pricing.includeVAT ? (pricing.vatRate / 100) : 0,
+        }
+      };
+
+      const response = await fetch(`${freeAgent.apiUrl}/invoices`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${freeAgent.accessToken}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(invoiceData),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        setFreeAgent({ ...freeAgent, lastSync: new Date().toISOString() });
+        alert('✅ Quote successfully exported to FreeAgent!\n\nInvoice created and ready to send to your client.');
+      } else {
+        const error = await response.json();
+        console.error('FreeAgent API Error:', error);
+        alert(`❌ Failed to export to FreeAgent.\n\nError: ${error.errors || 'Please check your API credentials and try again.'}`);
+      }
+    } catch (error) {
+      console.error('Export error:', error);
+      alert(`❌ Export failed.\n\nError: ${error.message}\n\nPlease check your internet connection and FreeAgent settings.`);
+    }
+  };
 
   // Export to WhatsApp
   const exportToWhatsApp = () => {
     let message = `📋 *TILING ESTIMATE*\n\n`;
+    
+    // Business Branding
+    if (businessBranding.companyName) {
+      message += `🏢 *${businessBranding.companyName}*\n`;
+      if (businessBranding.phone) message += `📞 ${businessBranding.phone}\n`;
+      if (businessBranding.email) message += `📧 ${businessBranding.email}\n`;
+      if (businessBranding.website) message += `🌐 ${businessBranding.website}\n`;
+      if (businessBranding.address) message += `📍 ${businessBranding.address}\n`;
+      if (businessBranding.vatNumber) message += `VAT: ${businessBranding.vatNumber}\n`;
+      message += `\n`;
+    }
     
     if (customer.name) {
       message += `👤 *Customer:* ${customer.name}\n`;
@@ -1067,7 +1354,7 @@ export default function App() {
 
     if (subtotal > 0) {
       message += `\n💰 *COST BREAKDOWN*\n`;
-      if (costs.tiles > 0) message += `Tiles: £${costs.tiles.toFixed(2)}\n`;
+      if (costs.dayRate > 0) message += `Day Rate: £${costs.dayRate.toFixed(2)}\n`;
       if (costs.labour > 0) message += `Labour: £${costs.labour.toFixed(2)}\n`;
       if (costs.adhesive > 0) message += `Adhesive: £${costs.adhesive.toFixed(2)}\n`;
       if (costs.grout > 0) message += `Grout: £${costs.grout.toFixed(2)}\n`;
@@ -1081,6 +1368,9 @@ export default function App() {
       if (costs.wallPrimer > 0) message += `Wall Primer: £${costs.wallPrimer.toFixed(2)}\n`;
       message += `\nSubtotal: £${subtotal.toFixed(2)}\n`;
       message += `Markup (${pricing.markup}%): £${markupAmount.toFixed(2)}\n`;
+      if (pricing.includeVAT) {
+        message += `VAT (${pricing.vatRate}%): £${vatAmount.toFixed(2)}\n`;
+      }
       message += `*TOTAL: £${total.toFixed(2)}*`;
     }
 
@@ -1091,7 +1381,21 @@ export default function App() {
 
   // Export to text file
   const exportToFile = () => {
-    let content = `TILING ESTIMATE\n${'='.repeat(50)}\n\n`;
+    let content = `${'='.repeat(60)}\n`;
+    content += `                    TILING ESTIMATE\n`;
+    content += `${'='.repeat(60)}\n\n`;
+    
+    // Business Branding
+    if (businessBranding.companyName) {
+      content += `${businessBranding.companyName.toUpperCase()}\n`;
+      if (businessBranding.address) content += `${businessBranding.address}\n`;
+      if (businessBranding.phone) content += `Phone: ${businessBranding.phone}\n`;
+      if (businessBranding.email) content += `Email: ${businessBranding.email}\n`;
+      if (businessBranding.website) content += `Web: ${businessBranding.website}\n`;
+      if (businessBranding.vatNumber) content += `VAT Number: ${businessBranding.vatNumber}\n`;
+      if (businessBranding.registrationNumber) content += `Reg Number: ${businessBranding.registrationNumber}\n`;
+      content += `\n${'-'.repeat(60)}\n\n`;
+    }
     
     if (customer.name) {
       content += `CUSTOMER INFORMATION\n`;
@@ -1102,7 +1406,7 @@ export default function App() {
       content += `\n`;
     }
 
-    content += `PROJECT SUMMARY\n${'-'.repeat(50)}\n`;
+    content += `PROJECT SUMMARY\n${'-'.repeat(60)}\n`;
     content += `Rooms: ${rooms.length}\n`;
     content += `Total Areas: ${grandTotals.totalAreas}\n`;
     content += `Net Area: ${grandTotals.netArea.toFixed(2)} m²\n`;
@@ -1150,7 +1454,7 @@ export default function App() {
       content += `\n`;
     });
 
-    content += `MATERIALS NEEDED\n${'-'.repeat(50)}\n`;
+    content += `MATERIALS NEEDED\n${'-'.repeat(60)}\n`;
     content += `Standard Materials:\n`;
     content += `  Adhesive: ${materials.adhesive} kg\n`;
     content += `  Grout: ${materials.grout} kg\n`;
@@ -1190,8 +1494,8 @@ export default function App() {
     }
 
     if (subtotal > 0) {
-      content += `\nCOST BREAKDOWN\n${'-'.repeat(50)}\n`;
-      if (costs.tiles > 0) content += `Tiles: £${costs.tiles.toFixed(2)}\n`;
+      content += `\nCOST BREAKDOWN\n${'-'.repeat(60)}\n`;
+      if (costs.dayRate > 0) content += `Day Rate: £${costs.dayRate.toFixed(2)}\n`;
       if (costs.labour > 0) content += `Labour: £${costs.labour.toFixed(2)}\n`;
       if (costs.adhesive > 0) content += `Adhesive: £${costs.adhesive.toFixed(2)}\n`;
       if (costs.grout > 0) content += `Grout: £${costs.grout.toFixed(2)}\n`;
@@ -1205,17 +1509,24 @@ export default function App() {
       if (costs.wallPrimer > 0) content += `Wall Primer: £${costs.wallPrimer.toFixed(2)}\n`;
       content += `\nSubtotal: £${subtotal.toFixed(2)}\n`;
       content += `Markup (${pricing.markup}%): £${markupAmount.toFixed(2)}\n`;
+      if (pricing.includeVAT) {
+        content += `VAT (${pricing.vatRate}%): £${vatAmount.toFixed(2)}\n`;
+      }
+      content += `${'='.repeat(60)}\n`;
       content += `TOTAL: £${total.toFixed(2)}\n`;
+      content += `${'='.repeat(60)}\n`;
     }
 
-    content += `\n${'='.repeat(50)}\n`;
-    content += `Generated: ${new Date().toLocaleString()}\n`;
+    content += `\nGenerated: ${new Date().toLocaleString()}\n`;
 
     const blob = new Blob([content], { type: 'text/plain' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `tiling-estimate-${customer.name || 'quote'}-${Date.now()}.txt`;
+    const filename = businessBranding.companyName 
+      ? `${businessBranding.companyName.replace(/\s+/g, '-')}-estimate-${customer.name || 'quote'}-${Date.now()}.txt`
+      : `tiling-estimate-${customer.name || 'quote'}-${Date.now()}.txt`;
+    a.download = filename;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1225,7 +1536,7 @@ export default function App() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(180deg, #0a0e1a 0%, #1a1f35 50%, #0f1419 100%)",
+      background: theme.background,
       fontFamily: "'DM Sans', sans-serif",
       padding: "32px 20px 60px",
     }}>
@@ -1247,46 +1558,73 @@ export default function App() {
             <div style={{
               width: "48px",
               height: "48px",
-              background: "linear-gradient(135deg, #f59e0b 0%, #fb923c 100%)",
+              background: theme.primary,
               borderRadius: "14px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               fontSize: "24px",
-              boxShadow: "0 8px 24px rgba(251, 146, 60, 0.3)",
+              boxShadow: `0 8px 24px ${theme.primaryColor}40`,
             }}>
               ◧
             </div>
             <h1 style={{
-              color: "#ffffff",
+              color: theme.textPrimary,
               fontSize: "36px",
               fontWeight: 800,
               margin: 0,
               letterSpacing: "-1px",
-              background: "linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
             }}>
               Tiling Estimator
             </h1>
           </div>
           <p style={{ 
-            color: "#94a3b8", 
+            color: theme.textSecondary, 
             fontSize: "15px", 
             margin: "0 0 20px 0",
             fontWeight: 500,
           }}>
             Professional multi-room calculator with smart material estimates
           </p>
+          
+          {/* Style Selector */}
+          <div style={{ 
+            display: "flex", 
+            justifyContent: "center", 
+            gap: "8px", 
+            marginBottom: "16px",
+            flexWrap: "wrap",
+          }}>
+            {Object.keys(THEMES).map((key) => (
+              <button
+                key={key}
+                onClick={() => setStyleTheme(key)}
+                style={{
+                  background: styleTheme === key ? theme.primary : `${theme.primaryColor}20`,
+                  border: `1px solid ${theme.primaryColor}40`,
+                  color: styleTheme === key ? (styleTheme === "minimal" ? theme.textPrimary : "#000") : theme.primaryColor,
+                  borderRadius: "8px",
+                  padding: "6px 14px",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                  fontFamily: "'DM Sans', sans-serif",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                {THEMES[key].name}
+              </button>
+            ))}
+          </div>
+          
           <button
             onClick={() => setShowProfessional(!showProfessional)}
             style={{
               background: showProfessional 
-                ? "linear-gradient(135deg, #f59e0b 0%, #fb923c 100%)" 
-                : "rgba(248, 113, 113, 0.1)",
-              border: showProfessional ? "none" : "1px solid rgba(248, 113, 113, 0.3)",
-              color: showProfessional ? "#000" : "#fb923c",
+                ? theme.primary
+                : `${theme.primaryColor}20`,
+              border: showProfessional ? "none" : `1px solid ${theme.primaryColor}40`,
+              color: showProfessional ? (styleTheme === "minimal" ? theme.textPrimary : "#000") : theme.primaryColor,
               borderRadius: "12px",
               padding: "12px 24px",
               cursor: "pointer",
@@ -1297,18 +1635,18 @@ export default function App() {
               alignItems: "center",
               gap: "8px",
               transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-              boxShadow: showProfessional ? "0 4px 16px rgba(251, 146, 60, 0.4)" : "none",
+              boxShadow: showProfessional ? `0 4px 16px ${theme.primaryColor}60` : "none",
             }}
             onMouseEnter={(e) => {
               e.target.style.transform = "translateY(-2px)";
               e.target.style.boxShadow = showProfessional 
-                ? "0 8px 24px rgba(251, 146, 60, 0.5)" 
-                : "0 4px 16px rgba(248, 113, 113, 0.2)";
+                ? `0 8px 24px ${theme.primaryColor}80` 
+                : `0 4px 16px ${theme.primaryColor}30`;
             }}
             onMouseLeave={(e) => {
               e.target.style.transform = "translateY(0)";
               e.target.style.boxShadow = showProfessional 
-                ? "0 4px 16px rgba(251, 146, 60, 0.4)" 
+                ? `0 4px 16px ${theme.primaryColor}60` 
                 : "none";
             }}
           >
@@ -1318,9 +1656,658 @@ export default function App() {
         </div>
       </div>
 
+      {/* Rooms Section - MOVED TO TOP */}
+      <div style={{ maxWidth: "900px", margin: "0 auto 32px", display: "flex", flexDirection: "column", gap: "24px" }}>
+        {rooms.map((room, i) => (
+          <RoomCard
+            key={room.id}
+            room={room}
+            roomIndex={i}
+            onUpdateRoom={updateRoom}
+            onRemoveRoom={removeRoom}
+            canRemoveRoom={rooms.length > 1}
+            theme={theme}
+          />
+        ))}
+
+        <button
+          onClick={addRoom}
+          style={{
+            background: theme.primary,
+            border: "none",
+            color: styleTheme === "minimal" ? theme.textPrimary : "#000",
+            borderRadius: "16px",
+            padding: "18px",
+            cursor: "pointer",
+            fontSize: "16px",
+            fontWeight: 700,
+            fontFamily: "'DM Sans', sans-serif",
+            boxShadow: `0 8px 32px ${theme.primaryColor}60`,
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = "translateY(-2px)";
+            e.target.style.boxShadow = `0 12px 40px ${theme.primaryColor}80`;
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = "translateY(0)";
+            e.target.style.boxShadow = `0 8px 32px ${theme.primaryColor}60`;
+          }}
+        >
+          + Add Room
+        </button>
+      </div>
+
+      {/* Pricing & Costs - Available to All Users */}
+      <div style={{ maxWidth: "900px", margin: "0 auto 32px" }}>
+        <div style={{
+          background: theme.cardBg,
+          backdropFilter: "blur(20px)",
+          border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.1)",
+          borderRadius: "20px",
+          padding: "24px",
+          boxShadow: styleTheme === "minimal" ? "0 8px 32px rgba(0, 0, 0, 0.08)" : "0 8px 32px rgba(0, 0, 0, 0.3)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+            <div style={{
+              background: theme.primary,
+              borderRadius: "10px",
+              padding: "8px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}>
+              <DollarSign size={20} color={styleTheme === "minimal" ? theme.textPrimary : "#000"} />
+            </div>
+            <h3 style={{
+              color: theme.textPrimary,
+              fontSize: "18px",
+              fontWeight: 700,
+              margin: 0,
+              fontFamily: "'DM Sans', sans-serif",
+            }}>
+              Pricing & Costs
+            </h3>
+          </div>
+          
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+            <div>
+              <label style={{...labelStyle, color: theme.textSecondary}}>Day Rate (£)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="200.00"
+                value={pricing.dayRate}
+                onChange={(e) => setPricing({ ...pricing, dayRate: e.target.value })}
+                style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+              />
+            </div>
+            <div>
+              <label style={{...labelStyle, color: theme.textSecondary}}>Labour (£/m²)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="35.00"
+                value={pricing.labourPricePerSqm}
+                onChange={(e) => setPricing({ ...pricing, labourPricePerSqm: e.target.value })}
+                style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+              />
+            </div>
+            <div>
+              <label style={{...labelStyle, color: theme.textSecondary}}>Adhesive (£/kg)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="2.50"
+                value={pricing.adhesivePrice}
+                onChange={(e) => setPricing({ ...pricing, adhesivePrice: e.target.value })}
+                style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+              />
+            </div>
+            <div>
+              <label style={{...labelStyle, color: theme.textSecondary}}>Grout (£/kg)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="3.00"
+                value={pricing.groutPrice}
+                onChange={(e) => setPricing({ ...pricing, groutPrice: e.target.value })}
+                style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+              />
+            </div>
+            <div>
+              <label style={{...labelStyle, color: theme.textSecondary}}>Primer (£/L)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="8.00"
+                value={pricing.primerPrice}
+                onChange={(e) => setPricing({ ...pricing, primerPrice: e.target.value })}
+                style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+              />
+            </div>
+            <div>
+              <label style={{...labelStyle, color: theme.textSecondary}}>Sealer (£/L)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="12.00"
+                value={pricing.sealerPrice}
+                onChange={(e) => setPricing({ ...pricing, sealerPrice: e.target.value })}
+                style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+              />
+            </div>
+            
+            {/* Surface-specific material pricing */}
+            {parseFloat(surfaceMaterials.cementBoard) > 0 && (
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Cement Board (£/m²)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="15.00"
+                  value={pricing.cementBoardPrice}
+                  onChange={(e) => setPricing({ ...pricing, cementBoardPrice: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+            )}
+            {parseFloat(surfaceMaterials.ditraMat) > 0 && (
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Ditra Mat (£/m²)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="20.00"
+                  value={pricing.ditraMatPrice}
+                  onChange={(e) => setPricing({ ...pricing, ditraMatPrice: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+            )}
+            {parseFloat(surfaceMaterials.floorTanking) > 0 && (
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Floor Tanking (£/L)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="25.00"
+                  value={pricing.floorTankingPrice}
+                  onChange={(e) => setPricing({ ...pricing, floorTankingPrice: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+            )}
+            {parseFloat(surfaceMaterials.wallTanking) > 0 && (
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Wall Tanking (£/L)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="22.00"
+                  value={pricing.wallTankingPrice}
+                  onChange={(e) => setPricing({ ...pricing, wallTankingPrice: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+            )}
+            {parseFloat(surfaceMaterials.tileTrim) > 0 && (
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Tile Trim (£/m)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="3.50"
+                  value={pricing.tileTrimPrice}
+                  onChange={(e) => setPricing({ ...pricing, tileTrimPrice: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+            )}
+            {parseFloat(surfaceMaterials.wallPrimer) > 0 && (
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Wall Primer (£/L)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="10.00"
+                  value={pricing.wallPrimerPrice}
+                  onChange={(e) => setPricing({ ...pricing, wallPrimerPrice: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+            )}
+            
+            <div>
+              <label style={{...labelStyle, color: theme.textSecondary}}>Markup %</label>
+              <input
+                type="number"
+                step="1"
+                min="0"
+                max="100"
+                placeholder="15"
+                value={pricing.markup}
+                onChange={(e) => setPricing({ ...pricing, markup: parseFloat(e.target.value) || 0 })}
+                style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+              />
+            </div>
+          </div>
+          
+          {/* VAT Toggle */}
+          <div style={{
+            marginTop: "16px",
+            padding: "16px",
+            background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)",
+            borderRadius: "12px",
+            border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)",
+          }}>
+            <label style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              cursor: "pointer",
+              fontFamily: "'DM Sans', sans-serif",
+            }}>
+              <input
+                type="checkbox"
+                checked={pricing.includeVAT}
+                onChange={(e) => setPricing({ ...pricing, includeVAT: e.target.checked })}
+                style={{ 
+                  cursor: "pointer", 
+                  width: "20px", 
+                  height: "20px",
+                }}
+              />
+              <span style={{ 
+                color: theme.textPrimary, 
+                fontSize: "15px", 
+                fontWeight: 600,
+                flex: 1,
+              }}>
+                Include VAT
+              </span>
+              {pricing.includeVAT && (
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  max="100"
+                  value={pricing.vatRate}
+                  onChange={(e) => setPricing({ ...pricing, vatRate: parseFloat(e.target.value) || 20 })}
+                  style={{
+                    ...inputStyle,
+                    width: "80px",
+                    padding: "8px 12px",
+                    color: theme.textPrimary,
+                    background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.05)" : "rgba(148, 163, 184, 0.1)",
+                    border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.15)" : "1px solid rgba(148, 163, 184, 0.2)",
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+              )}
+              {pricing.includeVAT && (
+                <span style={{ color: theme.textSecondary, fontSize: "14px", fontWeight: 600 }}>
+                  %
+                </span>
+              )}
+            </label>
+            {pricing.includeVAT && vatAmount > 0 && (
+              <div style={{
+                marginTop: "12px",
+                padding: "12px",
+                background: `${theme.accent}20`,
+                borderRadius: "8px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}>
+                <span style={{ color: theme.textPrimary, fontSize: "13px", fontWeight: 600 }}>
+                  VAT Amount:
+                </span>
+                <span style={{ color: theme.accent, fontSize: "16px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                  £{vatAmount.toFixed(2)}
+                </span>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Grand Summary Bar */}
+      <div style={{
+        maxWidth: "900px",
+        margin: "0 auto 32px",
+        background: `linear-gradient(135deg, ${theme.primaryColor}25, ${theme.primaryColor}15)`,
+        backdropFilter: "blur(10px)",
+        border: `1px solid ${theme.primaryColor}40`,
+        borderRadius: "20px",
+        padding: "24px 32px",
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+        gap: "24px",
+        boxShadow: styleTheme === "minimal" ? "0 8px 32px rgba(0, 0, 0, 0.08)" : "0 8px 32px rgba(0, 0, 0, 0.3)",
+      }}>
+        {[
+          { label: "Rooms", value: rooms.length, color: theme.textPrimary, icon: "🏠" },
+          { label: "Areas", value: grandTotals.totalAreas, color: theme.textPrimary, icon: "📐" },
+          { label: "Total m²", value: grandTotals.totalArea.toFixed(2), color: theme.primaryColor, icon: "📏" },
+          { label: "Tiles", value: grandTotals.totalTiles, color: theme.accent, icon: "◧" },
+        ].map((stat) => (
+          <div key={stat.label} style={{ textAlign: "center" }}>
+            <div style={{ 
+              fontSize: "20px", 
+              marginBottom: "6px",
+              filter: "grayscale(0.2)",
+            }}>
+              {stat.icon}
+            </div>
+            <div style={{ 
+              color: theme.textSecondary, 
+              fontSize: "11px", 
+              fontWeight: 600, 
+              textTransform: "uppercase", 
+              letterSpacing: "1.5px", 
+              marginBottom: "6px",
+              fontFamily: "'DM Sans', sans-serif",
+            }}>
+              {stat.label}
+            </div>
+            <div style={{ 
+              color: stat.color, 
+              fontSize: "28px", 
+              fontWeight: 800, 
+              fontFamily: "'DM Mono', monospace",
+              lineHeight: 1,
+            }}>
+              {stat.value}
+            </div>
+          </div>
+        ))}
+      </div>
+
       {/* Professional Mode Sections */}
       {showProfessional && (
         <div style={{ maxWidth: "900px", margin: "0 auto 32px", display: "flex", flexDirection: "column", gap: "20px" }}>
+          
+          {/* Business Branding */}
+          <div style={{
+            background: theme.cardBg,
+            backdropFilter: "blur(20px)",
+            border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.1)",
+            borderRadius: "20px",
+            padding: "24px",
+            boxShadow: styleTheme === "minimal" ? "0 8px 32px rgba(0, 0, 0, 0.08)" : "0 8px 32px rgba(0, 0, 0, 0.3)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+              <div style={{
+                background: theme.primary,
+                borderRadius: "10px",
+                padding: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}>
+                <User size={20} color={styleTheme === "minimal" ? theme.textPrimary : "#000"} />
+              </div>
+              <h3 style={{
+                color: theme.textPrimary,
+                fontSize: "18px",
+                fontWeight: 700,
+                margin: 0,
+                fontFamily: "'DM Sans', sans-serif",
+              }}>
+                Business Branding
+              </h3>
+            </div>
+            
+            {/* Logo Upload */}
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{...labelStyle, color: theme.textSecondary}}>Company Logo</label>
+              <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  style={{ display: "none" }}
+                  id="logo-upload"
+                />
+                <label
+                  htmlFor="logo-upload"
+                  style={{
+                    ...inputStyle,
+                    color: theme.textPrimary,
+                    background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)",
+                    border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: "8px",
+                    fontWeight: 600,
+                    flex: 1,
+                  }}
+                >
+                  📁 {businessBranding.logo ? "Change Logo" : "Upload Logo"}
+                </label>
+                {businessBranding.logo && (
+                  <div style={{
+                    width: "60px",
+                    height: "60px",
+                    borderRadius: "8px",
+                    overflow: "hidden",
+                    border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.2)",
+                  }}>
+                    <img src={businessBranding.logo} alt="Logo" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Company Name</label>
+                <input
+                  type="text"
+                  placeholder="Your Tiling Company Ltd"
+                  value={businessBranding.companyName}
+                  onChange={(e) => setBusinessBranding({ ...businessBranding, companyName: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Business Phone</label>
+                <input
+                  type="tel"
+                  placeholder="01234 567890"
+                  value={businessBranding.phone}
+                  onChange={(e) => setBusinessBranding({ ...businessBranding, phone: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Business Email</label>
+                <input
+                  type="email"
+                  placeholder="info@yourcompany.co.uk"
+                  value={businessBranding.email}
+                  onChange={(e) => setBusinessBranding({ ...businessBranding, email: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Website</label>
+                <input
+                  type="text"
+                  placeholder="www.yourcompany.co.uk"
+                  value={businessBranding.website}
+                  onChange={(e) => setBusinessBranding({ ...businessBranding, website: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Business Address</label>
+                <input
+                  type="text"
+                  placeholder="123 High Street, London, UK"
+                  value={businessBranding.address}
+                  onChange={(e) => setBusinessBranding({ ...businessBranding, address: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>VAT Number</label>
+                <input
+                  type="text"
+                  placeholder="GB123456789"
+                  value={businessBranding.vatNumber}
+                  onChange={(e) => setBusinessBranding({ ...businessBranding, vatNumber: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Registration Number</label>
+                <input
+                  type="text"
+                  placeholder="12345678"
+                  value={businessBranding.registrationNumber}
+                  onChange={(e) => setBusinessBranding({ ...businessBranding, registrationNumber: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* FreeAgent Integration */}
+          <div style={{
+            background: theme.cardBg,
+            backdropFilter: "blur(20px)",
+            border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.1)",
+            borderRadius: "20px",
+            padding: "24px",
+            boxShadow: styleTheme === "minimal" ? "0 8px 32px rgba(0, 0, 0, 0.08)" : "0 8px 32px rgba(0, 0, 0, 0.3)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+              <div style={{
+                background: theme.primary,
+                borderRadius: "10px",
+                padding: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}>
+                <DollarSign size={20} color={styleTheme === "minimal" ? theme.textPrimary : "#000"} />
+              </div>
+              <h3 style={{
+                color: theme.textPrimary,
+                fontSize: "18px",
+                fontWeight: 700,
+                margin: 0,
+                fontFamily: "'DM Sans', sans-serif",
+                flex: 1,
+              }}>
+                FreeAgent Integration
+              </h3>
+              {freeAgent.connected && freeAgent.lastSync && (
+                <div style={{
+                  background: `${theme.accent}20`,
+                  color: theme.accent,
+                  padding: "4px 12px",
+                  borderRadius: "8px",
+                  fontSize: "12px",
+                  fontWeight: 600,
+                }}>
+                  ✓ Connected
+                </div>
+              )}
+            </div>
+            
+            <div style={{ 
+              background: styleTheme === "minimal" ? "rgba(59, 130, 246, 0.08)" : "rgba(59, 130, 246, 0.1)",
+              border: "1px solid rgba(59, 130, 246, 0.2)",
+              borderRadius: "12px",
+              padding: "16px",
+              marginBottom: "16px",
+            }}>
+              <div style={{ color: theme.textPrimary, fontSize: "13px", marginBottom: "8px", fontWeight: 600 }}>
+                📘 How to get your FreeAgent API Access Token:
+              </div>
+              <ol style={{ color: theme.textSecondary, fontSize: "12px", margin: 0, paddingLeft: "20px", lineHeight: "1.6" }}>
+                <li>Log in to your FreeAgent account</li>
+                <li>Go to Settings → Developer API</li>
+                <li>Click "Create a new app" or use existing app</li>
+                <li>Generate a Personal Access Token</li>
+                <li>Copy and paste the token below</li>
+              </ol>
+              <div style={{ 
+                color: theme.textSecondary, 
+                fontSize: "11px", 
+                marginTop: "8px",
+                fontStyle: "italic",
+              }}>
+                🔒 Your token is stored locally and never sent anywhere except FreeAgent.
+              </div>
+            </div>
+            
+            <div>
+              <label style={{...labelStyle, color: theme.textSecondary}}>Access Token</label>
+              <div style={{ display: "flex", gap: "12px" }}>
+                <input
+                  type="password"
+                  placeholder="Enter your FreeAgent Personal Access Token"
+                  value={freeAgent.accessToken}
+                  onChange={(e) => setFreeAgent({ ...freeAgent, accessToken: e.target.value, connected: e.target.value.length > 0 })}
+                  style={{
+                    ...inputStyle,
+                    color: theme.textPrimary,
+                    background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)",
+                    border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)",
+                    flex: 1,
+                  }}
+                />
+                {freeAgent.accessToken && (
+                  <button
+                    onClick={() => setFreeAgent({ ...freeAgent, accessToken: "", connected: false })}
+                    style={{
+                      background: "rgba(239, 68, 68, 0.15)",
+                      border: "1px solid rgba(239, 68, 68, 0.3)",
+                      color: "#f87171",
+                      borderRadius: "10px",
+                      padding: "12px 20px",
+                      cursor: "pointer",
+                      fontSize: "13px",
+                      fontWeight: 600,
+                      fontFamily: "'DM Sans', sans-serif",
+                      transition: "all 0.2s ease",
+                    }}
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+              {freeAgent.lastSync && (
+                <div style={{
+                  color: theme.textSecondary,
+                  fontSize: "11px",
+                  marginTop: "6px",
+                  fontStyle: "italic",
+                }}>
+                  Last export: {new Date(freeAgent.lastSync).toLocaleString()}
+                </div>
+              )}
+            </div>
+          </div>
           
           {/* Customer Information */}
           <div style={{
@@ -1793,10 +2780,10 @@ export default function App() {
                 boxShadow: "0 4px 16px rgba(0, 0, 0, 0.2)",
               }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                  {costs.tiles > 0 && (
+                  {costs.dayRate > 0 && (
                     <div style={{ display: "flex", justifyContent: "space-between" }}>
-                      <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>Tiles</span>
-                      <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{costs.tiles.toFixed(2)}</span>
+                      <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>Day Rate</span>
+                      <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{costs.dayRate.toFixed(2)}</span>
                     </div>
                   )}
                   {costs.labour > 0 && (
@@ -1874,6 +2861,12 @@ export default function App() {
                     <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>Markup ({pricing.markup}%)</span>
                     <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{markupAmount.toFixed(2)}</span>
                   </div>
+                  {pricing.includeVAT && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>VAT ({pricing.vatRate}%)</span>
+                      <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{vatAmount.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div style={{ height: "1px", background: "rgba(34,197,94,0.3)", margin: "4px 0" }}></div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#22c55e", fontSize: "16px", fontWeight: 700, fontFamily: "'DM Sans', sans-serif" }}>TOTAL</span>
@@ -1885,7 +2878,7 @@ export default function App() {
           </div>
 
           {/* Export Buttons */}
-          <div style={{ display: "flex", gap: "16px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: freeAgent.connected ? "1fr 1fr 1fr" : "1fr 1fr", gap: "16px" }}>
             <button
               onClick={exportToWhatsApp}
               style={{
@@ -1916,8 +2909,9 @@ export default function App() {
               }}
             >
               <Share2 size={20} />
-              Share via WhatsApp
+              WhatsApp
             </button>
+            
             <button
               onClick={exportToFile}
               style={{
@@ -1948,104 +2942,46 @@ export default function App() {
               }}
             >
               <Download size={20} />
-              Download Estimate
+              Download
             </button>
+            
+            {freeAgent.connected && (
+              <button
+                onClick={exportToFreeAgent}
+                style={{
+                  flex: 1,
+                  background: "linear-gradient(135deg, #a78bfa, #8b5cf6)",
+                  border: "none",
+                  color: "#000",
+                  borderRadius: "14px",
+                  padding: "16px",
+                  cursor: "pointer",
+                  fontSize: "15px",
+                  fontWeight: 700,
+                  fontFamily: "'DM Sans', sans-serif",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "10px",
+                  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                  boxShadow: "0 8px 24px rgba(139, 92, 246, 0.3)",
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.transform = "translateY(-2px)";
+                  e.target.style.boxShadow = "0 12px 32px rgba(139, 92, 246, 0.4)";
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.transform = "translateY(0)";
+                  e.target.style.boxShadow = "0 8px 24px rgba(139, 92, 246, 0.3)";
+                }}
+              >
+                <DollarSign size={20} />
+                FreeAgent
+              </button>
+            )}
           </div>
         </div>
       )}
-
-      {/* Grand Summary Bar */}
-      <div style={{
-        maxWidth: "900px",
-        margin: "0 auto 32px",
-        background: "linear-gradient(135deg, rgba(251, 146, 60, 0.15), rgba(245, 158, 11, 0.1))",
-        backdropFilter: "blur(10px)",
-        border: "1px solid rgba(251, 146, 60, 0.2)",
-        borderRadius: "20px",
-        padding: "24px 32px",
-        display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-        gap: "24px",
-        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
-      }}>
-        {[
-          { label: "Rooms", value: rooms.length, color: "#ffffff", icon: "🏠" },
-          { label: "Areas", value: grandTotals.totalAreas, color: "#ffffff", icon: "📐" },
-          { label: "Total m²", value: grandTotals.totalArea.toFixed(2), color: "#fb923c", icon: "📏" },
-          { label: "Tiles", value: grandTotals.totalTiles, color: "#34d399", icon: "◧" },
-        ].map((stat) => (
-          <div key={stat.label} style={{ textAlign: "center" }}>
-            <div style={{ 
-              fontSize: "20px", 
-              marginBottom: "6px",
-              filter: "grayscale(0.2)",
-            }}>
-              {stat.icon}
-            </div>
-            <div style={{ 
-              color: "#64748b", 
-              fontSize: "11px", 
-              fontWeight: 600, 
-              textTransform: "uppercase", 
-              letterSpacing: "1.5px", 
-              marginBottom: "6px",
-              fontFamily: "'DM Sans', sans-serif",
-            }}>
-              {stat.label}
-            </div>
-            <div style={{ 
-              color: stat.color, 
-              fontSize: "28px", 
-              fontWeight: 800, 
-              fontFamily: "'DM Mono', monospace",
-              lineHeight: 1,
-            }}>
-              {stat.value}
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* Rooms */}
-      <div style={{ maxWidth: "900px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "24px" }}>
-        {rooms.map((room, i) => (
-          <RoomCard
-            key={room.id}
-            room={room}
-            roomIndex={i}
-            onUpdateRoom={updateRoom}
-            onRemoveRoom={removeRoom}
-            canRemoveRoom={rooms.length > 1}
-          />
-        ))}
-
-        <button
-          onClick={addRoom}
-          style={{
-            background: "linear-gradient(135deg, #f59e0b 0%, #fb923c 100%)",
-            border: "none",
-            color: "#000",
-            borderRadius: "16px",
-            padding: "18px",
-            cursor: "pointer",
-            fontSize: "16px",
-            fontWeight: 700,
-            fontFamily: "'DM Sans', sans-serif",
-            boxShadow: "0 8px 32px rgba(251, 146, 60, 0.4)",
-            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-          }}
-          onMouseEnter={(e) => {
-            e.target.style.transform = "translateY(-2px)";
-            e.target.style.boxShadow = "0 12px 40px rgba(251, 146, 60, 0.5)";
-          }}
-          onMouseLeave={(e) => {
-            e.target.style.transform = "translateY(0)";
-            e.target.style.boxShadow = "0 8px 32px rgba(251, 146, 60, 0.4)";
-          }}
-        >
-          + Add Room
-        </button>
-      </div>
     </div>
   );
 }
