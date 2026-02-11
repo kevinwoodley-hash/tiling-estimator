@@ -197,7 +197,14 @@ Click "Show Professional Mode" to access advanced features:
      - **Floor**: Cement board, Ditra mat, floor tanking
      - **Wall**: Wall tanking, tile trim, wall primer
 
-3. **Pricing & Costs**
+3. **Complete Wall Calculation** (for walls)
+   - Switch to "Complete Walls" mode
+   - Enter room length and width
+   - Set ceiling height (default 2.4m)
+   - System calculates: 2 × Height × (Length + Width)
+   - Perfect for tiling entire room walls
+
+4. **Pricing & Costs**
    - Enter prices for tiles, labour, and all materials
    - Surface-specific material pricing appears automatically when selected
    - Set your markup percentage
@@ -212,6 +219,7 @@ Click "Show Professional Mode" to access advanced features:
 
 ### Area & Tile Calculations
 - **Net Area**: Sum of all area dimensions (length × width)
+- **Wall Area (Complete Walls Mode)**: 2 × Height × (Length + Width)
 - **Wastage Calculation**: Net area × (1 + wastage%)
 - **Tiles Required**: Rounded up (Total area with wastage ÷ single tile area)
 
