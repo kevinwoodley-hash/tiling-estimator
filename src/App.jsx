@@ -7,8 +7,16 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 const MATERIAL_RATES = {
   adhesive: 3.5, // kg per m²
   grout: 0.5, // kg per m²
-  primer: 0.15, // L per m²
+  primer: 0.15, // L per m² (standard primer)
   sealer: 0.1, // L per m²
+  // Floor materials
+  cementBoard: 1, // boards per m² (600x1200mm boards)
+  ditraMat: 1.1, // m² per m² (10% wastage)
+  floorTanking: 0.5, // L per m²
+  // Wall materials
+  wallTanking: 0.4, // L per m²
+  tileTrim: 4, // linear meters per m² (approximate)
+  wallPrimer: 0.2, // L per m²
 };
 
 const AREA_TYPES = [
@@ -49,11 +57,23 @@ const defaultArea = () => ({
 const defaultRoom = () => ({
   id: generateId(),
   name: "Room 1",
+  surfaceType: "floor", // floor or wall
+  calculationMode: "areas", // "areas" or "walls"
+  ceilingHeight: "2.4",
+  wallPerimeter: "",
   areas: [defaultArea()],
   tileSize: 5,
   customTileW: "",
   customTileH: "",
   wastage: 10,
+  // Floor options
+  useCementBoard: false,
+  useDitraMat: false,
+  useFloorTanking: false,
+  // Wall options
+  useWallTanking: false,
+  useTileTrim: false,
+  useWallPrimer: false,
 });
 
 function AreaCard({ area, index, onUpdate, onRemove, canRemove }) {
@@ -208,11 +228,13 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom }
     onUpdateRoom(room.id, { ...room, [field]: value });
   };
 
-  const totalSqm = room.areas.reduce((sum, a) => {
-    const l = parseFloat(a.length) || 0;
-    const w = parseFloat(a.width) || 0;
-    return sum + l * w;
-  }, 0);
+  const totalSqm = room.calculationMode === "walls" 
+    ? (parseFloat(room.wallPerimeter) || 0) * (parseFloat(room.ceilingHeight) || 0)
+    : room.areas.reduce((sum, a) => {
+        const l = parseFloat(a.length) || 0;
+        const w = parseFloat(a.width) || 0;
+        return sum + l * w;
+      }, 0);
 
   const tileInfo = TILE_SIZES[room.tileSize];
   const isCustomTile = tileInfo.label === "Custom";
@@ -225,28 +247,40 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom }
 
   return (
     <div style={{
-      background: "linear-gradient(160deg, rgba(30,41,59,0.95), rgba(15,23,42,0.98))",
-      border: "1px solid rgba(255,255,255,0.1)",
-      borderRadius: "16px",
-      padding: "24px",
-      boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
-    }}>
+      background: "linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8))",
+      backdropFilter: "blur(20px)",
+      border: "1px solid rgba(148, 163, 184, 0.1)",
+      borderRadius: "24px",
+      padding: "28px",
+      boxShadow: "0 20px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(148, 163, 184, 0.05)",
+      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    }}
+    onMouseEnter={(e) => {
+      e.currentTarget.style.transform = "translateY(-4px)";
+      e.currentTarget.style.boxShadow = "0 24px 70px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(251, 146, 60, 0.2)";
+    }}
+    onMouseLeave={(e) => {
+      e.currentTarget.style.transform = "translateY(0)";
+      e.currentTarget.style.boxShadow = "0 20px 60px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(148, 163, 184, 0.05)";
+    }}
+    >
       {/* Room Header */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "14px", flex: 1 }}>
           <div style={{
-            background: "linear-gradient(135deg, #f59e0b, #d97706)",
-            width: "36px",
-            height: "36px",
-            borderRadius: "10px",
+            background: "linear-gradient(135deg, #f59e0b 0%, #fb923c 100%)",
+            width: "44px",
+            height: "44px",
+            borderRadius: "14px",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
             fontWeight: 800,
-            fontSize: "16px",
+            fontSize: "18px",
             color: "#000",
             fontFamily: "'DM Mono', monospace",
             flexShrink: 0,
+            boxShadow: "0 8px 24px rgba(251, 146, 60, 0.3)",
           }}>
             {roomIndex + 1}
           </div>
@@ -256,30 +290,48 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom }
             onChange={(e) => updateField("name", e.target.value)}
             style={{
               ...inputStyle,
-              fontSize: "18px",
+              fontSize: "20px",
               fontWeight: 700,
               background: "transparent",
-              border: "1px solid transparent",
-              padding: "4px 8px",
+              border: "none",
+              borderBottom: "2px solid transparent",
+              padding: "6px 0",
               fontFamily: "'DM Sans', sans-serif",
+              color: "#ffffff",
+              borderRadius: 0,
+              transition: "all 0.2s ease",
             }}
-            onFocus={(e) => { e.target.style.border = "1px solid rgba(245,158,11,0.4)"; }}
-            onBlur={(e) => { e.target.style.border = "1px solid transparent"; }}
+            onFocus={(e) => { 
+              e.target.style.borderBottom = "2px solid rgba(251, 146, 60, 0.6)"; 
+            }}
+            onBlur={(e) => { 
+              e.target.style.borderBottom = "2px solid transparent"; 
+            }}
           />
         </div>
         {canRemoveRoom && (
           <button
             onClick={() => onRemoveRoom(room.id)}
             style={{
-              background: "rgba(239,68,68,0.12)",
-              border: "1px solid rgba(239,68,68,0.25)",
+              background: "rgba(239, 68, 68, 0.15)",
+              backdropFilter: "blur(10px)",
+              border: "1px solid rgba(239, 68, 68, 0.3)",
               color: "#f87171",
-              borderRadius: "8px",
-              padding: "6px 14px",
+              borderRadius: "12px",
+              padding: "8px 16px",
               cursor: "pointer",
               fontSize: "13px",
               fontWeight: 600,
               fontFamily: "'DM Sans', sans-serif",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.background = "rgba(239, 68, 68, 0.25)";
+              e.target.style.transform = "scale(1.05)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.background = "rgba(239, 68, 68, 0.15)";
+              e.target.style.transform = "scale(1)";
             }}
           >
             Remove Room
@@ -346,72 +398,434 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom }
         </div>
       </div>
 
-      {/* Areas */}
-      <div style={{ marginBottom: "16px" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-          <span style={{
-            color: "#94a3b8",
-            fontSize: "12px",
-            fontWeight: 600,
-            textTransform: "uppercase",
-            letterSpacing: "1.5px",
-            fontFamily: "'DM Sans', sans-serif",
+      {/* Surface Type & Material Options */}
+      <div style={{
+        background: "rgba(148, 163, 184, 0.05)",
+        backdropFilter: "blur(10px)",
+        border: "1px solid rgba(148, 163, 184, 0.1)",
+        borderRadius: "16px",
+        padding: "20px",
+        marginBottom: "20px",
+      }}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+          <div>
+            <label style={labelStyle}>Surface Type</label>
+            <select
+              value={room.surfaceType}
+              onChange={(e) => updateField("surfaceType", e.target.value)}
+              style={selectStyle}
+            >
+              <option value="floor">Floor</option>
+              <option value="wall">Wall</option>
+            </select>
+          </div>
+          
+          {room.surfaceType === "wall" && (
+            <div>
+              <label style={labelStyle}>Calculation Mode</label>
+              <select
+                value={room.calculationMode}
+                onChange={(e) => updateField("calculationMode", e.target.value)}
+                style={selectStyle}
+              >
+                <option value="areas">Individual Areas</option>
+                <option value="walls">Complete Walls</option>
+              </select>
+            </div>
+          )}
+        </div>
+
+        {room.calculationMode === "walls" && room.surfaceType === "wall" && (
+          <div style={{
+            background: "linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(147, 51, 234, 0.05))",
+            border: "1px solid rgba(168, 85, 247, 0.2)",
+            borderRadius: "12px",
+            padding: "16px",
+            marginBottom: "16px",
           }}>
-            Areas ({room.areas.length})
-          </span>
-          <button
-            onClick={addArea}
-            style={{
-              background: "linear-gradient(135deg, rgba(245,158,11,0.2), rgba(217,119,6,0.15))",
-              border: "1px solid rgba(245,158,11,0.35)",
-              color: "#f59e0b",
-              borderRadius: "8px",
-              padding: "6px 14px",
+            <div style={{ 
+              color: "#c4b5fd", 
+              fontSize: "12px", 
+              fontWeight: 600, 
+              marginBottom: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}>
+              <span style={{ fontSize: "16px" }}>📐</span>
+              Complete Wall Calculation
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <div>
+                <label style={labelStyle}>Room Perimeter (m)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="e.g., 12.5"
+                  value={room.wallPerimeter}
+                  onChange={(e) => updateField("wallPerimeter", e.target.value)}
+                  style={inputStyle}
+                />
+                <div style={{ 
+                  color: "#64748b", 
+                  fontSize: "11px", 
+                  marginTop: "4px",
+                  fontStyle: "italic",
+                }}>
+                  Add all wall lengths together
+                </div>
+              </div>
+              <div>
+                <label style={labelStyle}>Ceiling Height (m)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="2.4"
+                  value={room.ceilingHeight}
+                  onChange={(e) => updateField("ceilingHeight", e.target.value)}
+                  style={inputStyle}
+                />
+                <div style={{ 
+                  color: "#64748b", 
+                  fontSize: "11px", 
+                  marginTop: "4px",
+                  fontStyle: "italic",
+                }}>
+                  Default: 2.4m
+                </div>
+              </div>
+            </div>
+            {room.wallPerimeter && room.ceilingHeight && (
+              <div style={{
+                marginTop: "12px",
+                padding: "12px",
+                background: "rgba(168, 85, 247, 0.15)",
+                borderRadius: "8px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}>
+                <span style={{ color: "#c4b5fd", fontSize: "13px", fontWeight: 600 }}>
+                  Total Wall Area:
+                </span>
+                <span style={{ color: "#a855f7", fontSize: "18px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                  {totalSqm.toFixed(2)} m²
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {room.surfaceType === "floor" ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div style={{ 
+              color: "#94a3b8", 
+              fontSize: "11px", 
+              fontWeight: 600, 
+              textTransform: "uppercase", 
+              letterSpacing: "1px",
+              marginBottom: "4px",
+            }}>
+              Floor Materials
+            </div>
+            <label style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              color: "#e2e8f0",
+              fontSize: "14px",
               cursor: "pointer",
-              fontSize: "13px",
-              fontWeight: 600,
               fontFamily: "'DM Sans', sans-serif",
+              padding: "8px 12px",
+              borderRadius: "8px",
               transition: "all 0.2s ease",
+              background: room.useCementBoard ? "rgba(59, 130, 246, 0.1)" : "transparent",
             }}
-          >
-            + Add Area
-          </button>
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-          {room.areas.map((area, i) => (
-            <AreaCard
-              key={area.id}
-              area={area}
-              index={i}
-              onUpdate={updateArea}
-              onRemove={removeArea}
-              canRemove={room.areas.length > 1}
-            />
-          ))}
-        </div>
+            onMouseEnter={(e) => { e.target.style.background = room.useCementBoard ? "rgba(59, 130, 246, 0.15)" : "rgba(148, 163, 184, 0.05)"; }}
+            onMouseLeave={(e) => { e.target.style.background = room.useCementBoard ? "rgba(59, 130, 246, 0.1)" : "transparent"; }}
+            >
+              <input
+                type="checkbox"
+                checked={room.useCementBoard}
+                onChange={(e) => updateField("useCementBoard", e.target.checked)}
+                style={{ cursor: "pointer", width: "18px", height: "18px" }}
+              />
+              <span>Cement Board</span>
+            </label>
+            <label style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              color: "#e2e8f0",
+              fontSize: "14px",
+              cursor: "pointer",
+              fontFamily: "'DM Sans', sans-serif",
+              padding: "8px 12px",
+              borderRadius: "8px",
+              transition: "all 0.2s ease",
+              background: room.useDitraMat ? "rgba(59, 130, 246, 0.1)" : "transparent",
+            }}
+            onMouseEnter={(e) => { e.target.style.background = room.useDitraMat ? "rgba(59, 130, 246, 0.15)" : "rgba(148, 163, 184, 0.05)"; }}
+            onMouseLeave={(e) => { e.target.style.background = room.useDitraMat ? "rgba(59, 130, 246, 0.1)" : "transparent"; }}
+            >
+              <input
+                type="checkbox"
+                checked={room.useDitraMat}
+                onChange={(e) => updateField("useDitraMat", e.target.checked)}
+                style={{ cursor: "pointer", width: "18px", height: "18px" }}
+              />
+              <span>Ditra Mat</span>
+            </label>
+            <label style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              color: "#e2e8f0",
+              fontSize: "14px",
+              cursor: "pointer",
+              fontFamily: "'DM Sans', sans-serif",
+              padding: "8px 12px",
+              borderRadius: "8px",
+              transition: "all 0.2s ease",
+              background: room.useFloorTanking ? "rgba(59, 130, 246, 0.1)" : "transparent",
+            }}
+            onMouseEnter={(e) => { e.target.style.background = room.useFloorTanking ? "rgba(59, 130, 246, 0.15)" : "rgba(148, 163, 184, 0.05)"; }}
+            onMouseLeave={(e) => { e.target.style.background = room.useFloorTanking ? "rgba(59, 130, 246, 0.1)" : "transparent"; }}
+            >
+              <input
+                type="checkbox"
+                checked={room.useFloorTanking}
+                onChange={(e) => updateField("useFloorTanking", e.target.checked)}
+                style={{ cursor: "pointer", width: "18px", height: "18px" }}
+              />
+              <span>Tanking (Floor)</span>
+            </label>
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+            <div style={{ 
+              color: "#94a3b8", 
+              fontSize: "11px", 
+              fontWeight: 600, 
+              textTransform: "uppercase", 
+              letterSpacing: "1px",
+              marginBottom: "4px",
+            }}>
+              Wall Materials
+            </div>
+            <label style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              color: "#e2e8f0",
+              fontSize: "14px",
+              cursor: "pointer",
+              fontFamily: "'DM Sans', sans-serif",
+              padding: "8px 12px",
+              borderRadius: "8px",
+              transition: "all 0.2s ease",
+              background: room.useWallTanking ? "rgba(168, 85, 247, 0.1)" : "transparent",
+            }}
+            onMouseEnter={(e) => { e.target.style.background = room.useWallTanking ? "rgba(168, 85, 247, 0.15)" : "rgba(148, 163, 184, 0.05)"; }}
+            onMouseLeave={(e) => { e.target.style.background = room.useWallTanking ? "rgba(168, 85, 247, 0.1)" : "transparent"; }}
+            >
+              <input
+                type="checkbox"
+                checked={room.useWallTanking}
+                onChange={(e) => updateField("useWallTanking", e.target.checked)}
+                style={{ cursor: "pointer", width: "18px", height: "18px" }}
+              />
+              <span>Tanking (Wall)</span>
+            </label>
+            <label style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              color: "#e2e8f0",
+              fontSize: "14px",
+              cursor: "pointer",
+              fontFamily: "'DM Sans', sans-serif",
+              padding: "8px 12px",
+              borderRadius: "8px",
+              transition: "all 0.2s ease",
+              background: room.useTileTrim ? "rgba(168, 85, 247, 0.1)" : "transparent",
+            }}
+            onMouseEnter={(e) => { e.target.style.background = room.useTileTrim ? "rgba(168, 85, 247, 0.15)" : "rgba(148, 163, 184, 0.05)"; }}
+            onMouseLeave={(e) => { e.target.style.background = room.useTileTrim ? "rgba(168, 85, 247, 0.1)" : "transparent"; }}
+            >
+              <input
+                type="checkbox"
+                checked={room.useTileTrim}
+                onChange={(e) => updateField("useTileTrim", e.target.checked)}
+                style={{ cursor: "pointer", width: "18px", height: "18px" }}
+              />
+              <span>Tile Trim</span>
+            </label>
+            <label style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+              color: "#e2e8f0",
+              fontSize: "14px",
+              cursor: "pointer",
+              fontFamily: "'DM Sans', sans-serif",
+              padding: "8px 12px",
+              borderRadius: "8px",
+              transition: "all 0.2s ease",
+              background: room.useWallPrimer ? "rgba(168, 85, 247, 0.1)" : "transparent",
+            }}
+            onMouseEnter={(e) => { e.target.style.background = room.useWallPrimer ? "rgba(168, 85, 247, 0.15)" : "rgba(148, 163, 184, 0.05)"; }}
+            onMouseLeave={(e) => { e.target.style.background = room.useWallPrimer ? "rgba(168, 85, 247, 0.1)" : "transparent"; }}
+            >
+              <input
+                type="checkbox"
+                checked={room.useWallPrimer}
+                onChange={(e) => updateField("useWallPrimer", e.target.checked)}
+                style={{ cursor: "pointer", width: "18px", height: "18px" }}
+              />
+              <span>Wall Primer</span>
+            </label>
+          </div>
+        )}
       </div>
+
+      {/* Areas */}
+      {room.calculationMode === "areas" && (
+        <div style={{ marginBottom: "20px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+            <span style={{
+              color: "#94a3b8",
+              fontSize: "12px",
+              fontWeight: 600,
+              textTransform: "uppercase",
+              letterSpacing: "1.5px",
+              fontFamily: "'DM Sans', sans-serif",
+            }}>
+              Areas ({room.areas.length})
+            </span>
+            <button
+              onClick={addArea}
+              style={{
+                background: "linear-gradient(135deg, rgba(251, 146, 60, 0.2), rgba(245, 158, 11, 0.15))",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(251, 146, 60, 0.4)",
+                color: "#fb923c",
+                borderRadius: "10px",
+                padding: "8px 16px",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontWeight: 600,
+                fontFamily: "'DM Sans', sans-serif",
+                transition: "all 0.2s ease",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.background = "linear-gradient(135deg, rgba(251, 146, 60, 0.3), rgba(245, 158, 11, 0.2))";
+                e.target.style.transform = "translateY(-1px)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.background = "linear-gradient(135deg, rgba(251, 146, 60, 0.2), rgba(245, 158, 11, 0.15))";
+                e.target.style.transform = "translateY(0)";
+              }}
+            >
+              + Add Area
+            </button>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+            {room.areas.map((area, i) => (
+              <AreaCard
+                key={area.id}
+                area={area}
+                index={i}
+                onUpdate={updateArea}
+                onRemove={removeArea}
+                canRemove={room.areas.length > 1}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Room Summary */}
       <div style={{
-        background: "linear-gradient(135deg, rgba(245,158,11,0.1), rgba(217,119,6,0.05))",
-        border: "1px solid rgba(245,158,11,0.2)",
-        borderRadius: "12px",
-        padding: "16px",
+        background: "linear-gradient(135deg, rgba(251, 146, 60, 0.12), rgba(245, 158, 11, 0.08))",
+        backdropFilter: "blur(10px)",
+        border: "1px solid rgba(251, 146, 60, 0.25)",
+        borderRadius: "16px",
+        padding: "20px",
         display: "grid",
         gridTemplateColumns: "1fr 1fr 1fr",
-        gap: "12px",
+        gap: "16px",
+        boxShadow: "0 4px 16px rgba(0, 0, 0, 0.2)",
       }}>
         <div style={{ textAlign: "center" }}>
-          <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Net Area</div>
-          <div style={{ color: "#e2e8f0", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>{totalSqm.toFixed(2)}<span style={{ fontSize: "12px", color: "#94a3b8" }}> m²</span></div>
+          <div style={{ 
+            color: "#94a3b8", 
+            fontSize: "11px", 
+            fontWeight: 600, 
+            textTransform: "uppercase", 
+            letterSpacing: "1.2px", 
+            marginBottom: "6px", 
+            fontFamily: "'DM Sans', sans-serif",
+          }}>
+            Net Area
+          </div>
+          <div style={{ 
+            color: "#ffffff", 
+            fontSize: "24px", 
+            fontWeight: 800, 
+            fontFamily: "'DM Mono', monospace",
+            lineHeight: 1,
+          }}>
+            {totalSqm.toFixed(2)}
+            <span style={{ fontSize: "14px", color: "#94a3b8", fontWeight: 600 }}> m²</span>
+          </div>
         </div>
         <div style={{ textAlign: "center" }}>
-          <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Inc. Wastage</div>
-          <div style={{ color: "#f59e0b", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>{totalWithWastage}<span style={{ fontSize: "12px", color: "#94a3b8" }}> m²</span></div>
+          <div style={{ 
+            color: "#94a3b8", 
+            fontSize: "11px", 
+            fontWeight: 600, 
+            textTransform: "uppercase", 
+            letterSpacing: "1.2px", 
+            marginBottom: "6px", 
+            fontFamily: "'DM Sans', sans-serif",
+          }}>
+            Inc. Wastage
+          </div>
+          <div style={{ 
+            color: "#fb923c", 
+            fontSize: "24px", 
+            fontWeight: 800, 
+            fontFamily: "'DM Mono', monospace",
+            lineHeight: 1,
+          }}>
+            {totalWithWastage}
+            <span style={{ fontSize: "14px", color: "#94a3b8", fontWeight: 600 }}> m²</span>
+          </div>
         </div>
         <div style={{ textAlign: "center" }}>
-          <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1px", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Tiles Needed</div>
-          <div style={{ color: "#22c55e", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>{tilesNeeded}</div>
+          <div style={{ 
+            color: "#94a3b8", 
+            fontSize: "11px", 
+            fontWeight: 600, 
+            textTransform: "uppercase", 
+            letterSpacing: "1.2px", 
+            marginBottom: "6px", 
+            fontFamily: "'DM Sans', sans-serif",
+          }}>
+            Tiles Needed
+          </div>
+          <div style={{ 
+            color: "#34d399", 
+            fontSize: "24px", 
+            fontWeight: 800, 
+            fontFamily: "'DM Mono', monospace",
+            lineHeight: 1,
+          }}>
+            {tilesNeeded}
+          </div>
         </div>
       </div>
     </div>
@@ -421,27 +835,28 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom }
 // Shared styles
 const labelStyle = {
   display: "block",
-  color: "#64748b",
-  fontSize: "11px",
+  color: "#94a3b8",
+  fontSize: "12px",
   fontWeight: 600,
   textTransform: "uppercase",
-  letterSpacing: "1px",
-  marginBottom: "4px",
+  letterSpacing: "1.2px",
+  marginBottom: "6px",
   fontFamily: "'DM Sans', sans-serif",
 };
 
 const inputStyle = {
   width: "100%",
-  background: "rgba(255,255,255,0.06)",
-  border: "1px solid rgba(255,255,255,0.1)",
-  borderRadius: "8px",
-  padding: "10px 12px",
-  color: "#e2e8f0",
+  background: "rgba(148, 163, 184, 0.08)",
+  backdropFilter: "blur(10px)",
+  border: "1px solid rgba(148, 163, 184, 0.15)",
+  borderRadius: "10px",
+  padding: "12px 14px",
+  color: "#ffffff",
   fontSize: "14px",
   fontFamily: "'DM Mono', monospace",
   outline: "none",
   boxSizing: "border-box",
-  transition: "border-color 0.2s ease",
+  transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
 };
 
 const selectStyle = {
@@ -470,6 +885,14 @@ export default function App() {
     groutPrice: "",
     primerPrice: "",
     sealerPrice: "",
+    // Floor material prices
+    cementBoardPrice: "",
+    ditraMatPrice: "",
+    floorTankingPrice: "",
+    // Wall material prices
+    wallTankingPrice: "",
+    tileTrimPrice: "",
+    wallPrimerPrice: "",
     markup: 15,
   });
 
@@ -521,6 +944,41 @@ export default function App() {
     sealer: (grandTotals.totalArea * MATERIAL_RATES.sealer).toFixed(1),
   };
 
+  // Calculate surface-specific materials
+  let cementBoardTotal = 0;
+  let ditraMatTotal = 0;
+  let floorTankingTotal = 0;
+  let wallTankingTotal = 0;
+  let tileTrimTotal = 0;
+  let wallPrimerTotal = 0;
+
+  rooms.forEach((room) => {
+    const roomSqm = room.areas.reduce((s, a) => {
+      return s + (parseFloat(a.length) || 0) * (parseFloat(a.width) || 0);
+    }, 0);
+    const wastageMultiplier = 1 + room.wastage / 100;
+    const withWastage = roomSqm * wastageMultiplier;
+
+    if (room.surfaceType === "floor") {
+      if (room.useCementBoard) cementBoardTotal += withWastage * MATERIAL_RATES.cementBoard;
+      if (room.useDitraMat) ditraMatTotal += withWastage * MATERIAL_RATES.ditraMat;
+      if (room.useFloorTanking) floorTankingTotal += withWastage * MATERIAL_RATES.floorTanking;
+    } else {
+      if (room.useWallTanking) wallTankingTotal += withWastage * MATERIAL_RATES.wallTanking;
+      if (room.useTileTrim) tileTrimTotal += withWastage * MATERIAL_RATES.tileTrim;
+      if (room.useWallPrimer) wallPrimerTotal += withWastage * MATERIAL_RATES.wallPrimer;
+    }
+  });
+
+  const surfaceMaterials = {
+    cementBoard: cementBoardTotal.toFixed(1),
+    ditraMat: ditraMatTotal.toFixed(1),
+    floorTanking: floorTankingTotal.toFixed(1),
+    wallTanking: wallTankingTotal.toFixed(1),
+    tileTrim: tileTrimTotal.toFixed(1),
+    wallPrimer: wallPrimerTotal.toFixed(1),
+  };
+
   // Cost calculations
   const costs = {
     tiles: grandTotals.totalArea * (parseFloat(pricing.tilePricePerSqm) || 0),
@@ -529,6 +987,14 @@ export default function App() {
     grout: parseFloat(materials.grout) * (parseFloat(pricing.groutPrice) || 0),
     primer: parseFloat(materials.primer) * (parseFloat(pricing.primerPrice) || 0),
     sealer: parseFloat(materials.sealer) * (parseFloat(pricing.sealerPrice) || 0),
+    // Floor materials
+    cementBoard: parseFloat(surfaceMaterials.cementBoard) * (parseFloat(pricing.cementBoardPrice) || 0),
+    ditraMat: parseFloat(surfaceMaterials.ditraMat) * (parseFloat(pricing.ditraMatPrice) || 0),
+    floorTanking: parseFloat(surfaceMaterials.floorTanking) * (parseFloat(pricing.floorTankingPrice) || 0),
+    // Wall materials
+    wallTanking: parseFloat(surfaceMaterials.wallTanking) * (parseFloat(pricing.wallTankingPrice) || 0),
+    tileTrim: parseFloat(surfaceMaterials.tileTrim) * (parseFloat(pricing.tileTrimPrice) || 0),
+    wallPrimer: parseFloat(surfaceMaterials.wallPrimer) * (parseFloat(pricing.wallPrimerPrice) || 0),
   };
 
   const subtotal = Object.values(costs).reduce((sum, cost) => sum + cost, 0);
@@ -559,6 +1025,28 @@ export default function App() {
     message += `Grout: ${materials.grout} kg\n`;
     message += `Primer: ${materials.primer} L\n`;
     message += `Sealer: ${materials.sealer} L\n`;
+    
+    // Floor materials
+    if (parseFloat(surfaceMaterials.cementBoard) > 0) {
+      message += `Cement Board: ${surfaceMaterials.cementBoard} m²\n`;
+    }
+    if (parseFloat(surfaceMaterials.ditraMat) > 0) {
+      message += `Ditra Mat: ${surfaceMaterials.ditraMat} m²\n`;
+    }
+    if (parseFloat(surfaceMaterials.floorTanking) > 0) {
+      message += `Floor Tanking: ${surfaceMaterials.floorTanking} L\n`;
+    }
+    
+    // Wall materials
+    if (parseFloat(surfaceMaterials.wallTanking) > 0) {
+      message += `Wall Tanking: ${surfaceMaterials.wallTanking} L\n`;
+    }
+    if (parseFloat(surfaceMaterials.tileTrim) > 0) {
+      message += `Tile Trim: ${surfaceMaterials.tileTrim} m\n`;
+    }
+    if (parseFloat(surfaceMaterials.wallPrimer) > 0) {
+      message += `Wall Primer: ${surfaceMaterials.wallPrimer} L\n`;
+    }
 
     if (subtotal > 0) {
       message += `\n💰 *COST BREAKDOWN*\n`;
@@ -568,6 +1056,12 @@ export default function App() {
       if (costs.grout > 0) message += `Grout: £${costs.grout.toFixed(2)}\n`;
       if (costs.primer > 0) message += `Primer: £${costs.primer.toFixed(2)}\n`;
       if (costs.sealer > 0) message += `Sealer: £${costs.sealer.toFixed(2)}\n`;
+      if (costs.cementBoard > 0) message += `Cement Board: £${costs.cementBoard.toFixed(2)}\n`;
+      if (costs.ditraMat > 0) message += `Ditra Mat: £${costs.ditraMat.toFixed(2)}\n`;
+      if (costs.floorTanking > 0) message += `Floor Tanking: £${costs.floorTanking.toFixed(2)}\n`;
+      if (costs.wallTanking > 0) message += `Wall Tanking: £${costs.wallTanking.toFixed(2)}\n`;
+      if (costs.tileTrim > 0) message += `Tile Trim: £${costs.tileTrim.toFixed(2)}\n`;
+      if (costs.wallPrimer > 0) message += `Wall Primer: £${costs.wallPrimer.toFixed(2)}\n`;
       message += `\nSubtotal: £${subtotal.toFixed(2)}\n`;
       message += `Markup (${pricing.markup}%): £${markupAmount.toFixed(2)}\n`;
       message += `*TOTAL: £${total.toFixed(2)}*`;
@@ -602,8 +1096,24 @@ export default function App() {
       const roomTotal = room.areas.reduce((sum, a) => {
         return sum + (parseFloat(a.length) || 0) * (parseFloat(a.width) || 0);
       }, 0);
-      content += `ROOM ${idx + 1}: ${room.name}\n`;
+      content += `ROOM ${idx + 1}: ${room.name} (${room.surfaceType === 'floor' ? 'Floor' : 'Wall'})\n`;
       content += `  Total Area: ${roomTotal.toFixed(2)} m²\n`;
+      
+      // Show selected options
+      const options = [];
+      if (room.surfaceType === 'floor') {
+        if (room.useCementBoard) options.push('Cement Board');
+        if (room.useDitraMat) options.push('Ditra Mat');
+        if (room.useFloorTanking) options.push('Floor Tanking');
+      } else {
+        if (room.useWallTanking) options.push('Wall Tanking');
+        if (room.useTileTrim) options.push('Tile Trim');
+        if (room.useWallPrimer) options.push('Wall Primer');
+      }
+      if (options.length > 0) {
+        content += `  Options: ${options.join(', ')}\n`;
+      }
+      
       room.areas.forEach((area, aIdx) => {
         const sqm = (parseFloat(area.length) || 0) * (parseFloat(area.width) || 0);
         const areaName = area.type === "Custom Area" ? area.customName || "Custom Area" : area.type;
@@ -613,10 +1123,43 @@ export default function App() {
     });
 
     content += `MATERIALS NEEDED\n${'-'.repeat(50)}\n`;
-    content += `Adhesive: ${materials.adhesive} kg\n`;
-    content += `Grout: ${materials.grout} kg\n`;
-    content += `Primer: ${materials.primer} L\n`;
-    content += `Sealer: ${materials.sealer} L\n`;
+    content += `Standard Materials:\n`;
+    content += `  Adhesive: ${materials.adhesive} kg\n`;
+    content += `  Grout: ${materials.grout} kg\n`;
+    content += `  Primer: ${materials.primer} L\n`;
+    content += `  Sealer: ${materials.sealer} L\n`;
+    
+    // Floor materials
+    if (parseFloat(surfaceMaterials.cementBoard) > 0 || 
+        parseFloat(surfaceMaterials.ditraMat) > 0 || 
+        parseFloat(surfaceMaterials.floorTanking) > 0) {
+      content += `\nFloor Materials:\n`;
+      if (parseFloat(surfaceMaterials.cementBoard) > 0) {
+        content += `  Cement Board: ${surfaceMaterials.cementBoard} m²\n`;
+      }
+      if (parseFloat(surfaceMaterials.ditraMat) > 0) {
+        content += `  Ditra Mat: ${surfaceMaterials.ditraMat} m²\n`;
+      }
+      if (parseFloat(surfaceMaterials.floorTanking) > 0) {
+        content += `  Floor Tanking: ${surfaceMaterials.floorTanking} L\n`;
+      }
+    }
+    
+    // Wall materials
+    if (parseFloat(surfaceMaterials.wallTanking) > 0 || 
+        parseFloat(surfaceMaterials.tileTrim) > 0 || 
+        parseFloat(surfaceMaterials.wallPrimer) > 0) {
+      content += `\nWall Materials:\n`;
+      if (parseFloat(surfaceMaterials.wallTanking) > 0) {
+        content += `  Wall Tanking: ${surfaceMaterials.wallTanking} L\n`;
+      }
+      if (parseFloat(surfaceMaterials.tileTrim) > 0) {
+        content += `  Tile Trim: ${surfaceMaterials.tileTrim} m\n`;
+      }
+      if (parseFloat(surfaceMaterials.wallPrimer) > 0) {
+        content += `  Wall Primer: ${surfaceMaterials.wallPrimer} L\n`;
+      }
+    }
 
     if (subtotal > 0) {
       content += `\nCOST BREAKDOWN\n${'-'.repeat(50)}\n`;
@@ -626,6 +1169,12 @@ export default function App() {
       if (costs.grout > 0) content += `Grout: £${costs.grout.toFixed(2)}\n`;
       if (costs.primer > 0) content += `Primer: £${costs.primer.toFixed(2)}\n`;
       if (costs.sealer > 0) content += `Sealer: £${costs.sealer.toFixed(2)}\n`;
+      if (costs.cementBoard > 0) content += `Cement Board: £${costs.cementBoard.toFixed(2)}\n`;
+      if (costs.ditraMat > 0) content += `Ditra Mat: £${costs.ditraMat.toFixed(2)}\n`;
+      if (costs.floorTanking > 0) content += `Floor Tanking: £${costs.floorTanking.toFixed(2)}\n`;
+      if (costs.wallTanking > 0) content += `Wall Tanking: £${costs.wallTanking.toFixed(2)}\n`;
+      if (costs.tileTrim > 0) content += `Tile Trim: £${costs.tileTrim.toFixed(2)}\n`;
+      if (costs.wallPrimer > 0) content += `Wall Primer: £${costs.wallPrimer.toFixed(2)}\n`;
       content += `\nSubtotal: £${subtotal.toFixed(2)}\n`;
       content += `Markup (${pricing.markup}%): £${markupAmount.toFixed(2)}\n`;
       content += `TOTAL: £${total.toFixed(2)}\n`;
@@ -648,86 +1197,126 @@ export default function App() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "linear-gradient(165deg, #0c1222 0%, #111827 50%, #0f172a 100%)",
+      background: "linear-gradient(180deg, #0a0e1a 0%, #1a1f35 50%, #0f1419 100%)",
       fontFamily: "'DM Sans', sans-serif",
-      padding: "24px 16px",
+      padding: "32px 20px 60px",
     }}>
       <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
 
       {/* Header */}
-      <div style={{ maxWidth: "720px", margin: "0 auto 24px", textAlign: "center" }}>
+      <div style={{ maxWidth: "900px", margin: "0 auto 32px" }}>
         <div style={{
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "10px",
-          marginBottom: "8px",
+          textAlign: "center",
+          marginBottom: "20px",
         }}>
           <div style={{
-            width: "40px",
-            height: "40px",
-            background: "linear-gradient(135deg, #f59e0b, #d97706)",
-            borderRadius: "10px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: "20px",
-          }}>
-            ◧
-          </div>
-          <h1 style={{
-            color: "#f1f5f9",
-            fontSize: "28px",
-            fontWeight: 800,
-            margin: 0,
-            letterSpacing: "-0.5px",
-          }}>
-            Tiling Estimator
-          </h1>
-        </div>
-        <p style={{ color: "#64748b", fontSize: "14px", margin: "0 0 12px 0" }}>
-          Add rooms and multiple areas per room for accurate tile calculations
-        </p>
-        <button
-          onClick={() => setShowProfessional(!showProfessional)}
-          style={{
-            background: showProfessional 
-              ? "linear-gradient(135deg, #f59e0b, #d97706)" 
-              : "rgba(245,158,11,0.15)",
-            border: "1px solid rgba(245,158,11,0.3)",
-            color: showProfessional ? "#000" : "#f59e0b",
-            borderRadius: "8px",
-            padding: "8px 16px",
-            cursor: "pointer",
-            fontSize: "13px",
-            fontWeight: 600,
-            fontFamily: "'DM Sans', sans-serif",
             display: "inline-flex",
             alignItems: "center",
-            gap: "6px",
-            transition: "all 0.2s ease",
-          }}
-        >
-          <Calculator size={16} />
-          {showProfessional ? "Hide" : "Show"} Professional Mode
-        </button>
+            justifyContent: "center",
+            gap: "14px",
+            marginBottom: "12px",
+          }}>
+            <div style={{
+              width: "48px",
+              height: "48px",
+              background: "linear-gradient(135deg, #f59e0b 0%, #fb923c 100%)",
+              borderRadius: "14px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: "24px",
+              boxShadow: "0 8px 24px rgba(251, 146, 60, 0.3)",
+            }}>
+              ◧
+            </div>
+            <h1 style={{
+              color: "#ffffff",
+              fontSize: "36px",
+              fontWeight: 800,
+              margin: 0,
+              letterSpacing: "-1px",
+              background: "linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              backgroundClip: "text",
+            }}>
+              Tiling Estimator
+            </h1>
+          </div>
+          <p style={{ 
+            color: "#94a3b8", 
+            fontSize: "15px", 
+            margin: "0 0 20px 0",
+            fontWeight: 500,
+          }}>
+            Professional multi-room calculator with smart material estimates
+          </p>
+          <button
+            onClick={() => setShowProfessional(!showProfessional)}
+            style={{
+              background: showProfessional 
+                ? "linear-gradient(135deg, #f59e0b 0%, #fb923c 100%)" 
+                : "rgba(248, 113, 113, 0.1)",
+              border: showProfessional ? "none" : "1px solid rgba(248, 113, 113, 0.3)",
+              color: showProfessional ? "#000" : "#fb923c",
+              borderRadius: "12px",
+              padding: "12px 24px",
+              cursor: "pointer",
+              fontSize: "14px",
+              fontWeight: 700,
+              fontFamily: "'DM Sans', sans-serif",
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "8px",
+              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+              boxShadow: showProfessional ? "0 4px 16px rgba(251, 146, 60, 0.4)" : "none",
+            }}
+            onMouseEnter={(e) => {
+              e.target.style.transform = "translateY(-2px)";
+              e.target.style.boxShadow = showProfessional 
+                ? "0 8px 24px rgba(251, 146, 60, 0.5)" 
+                : "0 4px 16px rgba(248, 113, 113, 0.2)";
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.transform = "translateY(0)";
+              e.target.style.boxShadow = showProfessional 
+                ? "0 4px 16px rgba(251, 146, 60, 0.4)" 
+                : "none";
+            }}
+          >
+            <Calculator size={18} />
+            {showProfessional ? "Hide" : "Show"} Professional Mode
+          </button>
+        </div>
       </div>
 
       {/* Professional Mode Sections */}
       {showProfessional && (
-        <div style={{ maxWidth: "720px", margin: "0 auto 24px", display: "flex", flexDirection: "column", gap: "16px" }}>
+        <div style={{ maxWidth: "900px", margin: "0 auto 32px", display: "flex", flexDirection: "column", gap: "20px" }}>
           
           {/* Customer Information */}
           <div style={{
-            background: "linear-gradient(160deg, rgba(30,41,59,0.95), rgba(15,23,42,0.98))",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: "16px",
-            padding: "20px",
+            background: "linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8))",
+            backdropFilter: "blur(20px)",
+            border: "1px solid rgba(148, 163, 184, 0.1)",
+            borderRadius: "20px",
+            padding: "24px",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
-              <User size={20} color="#f59e0b" />
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+              <div style={{
+                background: "linear-gradient(135deg, #f59e0b 0%, #fb923c 100%)",
+                borderRadius: "10px",
+                padding: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}>
+                <User size={20} color="#000" />
+              </div>
               <h3 style={{
-                color: "#f1f5f9",
-                fontSize: "16px",
+                color: "#ffffff",
+                fontSize: "18px",
                 fontWeight: 700,
                 margin: 0,
                 fontFamily: "'DM Sans', sans-serif",
@@ -781,16 +1370,27 @@ export default function App() {
 
           {/* Materials Summary */}
           <div style={{
-            background: "linear-gradient(160deg, rgba(30,41,59,0.95), rgba(15,23,42,0.98))",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: "16px",
-            padding: "20px",
+            background: "linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8))",
+            backdropFilter: "blur(20px)",
+            border: "1px solid rgba(148, 163, 184, 0.1)",
+            borderRadius: "20px",
+            padding: "24px",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
-              <Package size={20} color="#f59e0b" />
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+              <div style={{
+                background: "linear-gradient(135deg, #f59e0b 0%, #fb923c 100%)",
+                borderRadius: "10px",
+                padding: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}>
+                <Package size={20} color="#000" />
+              </div>
               <h3 style={{
-                color: "#f1f5f9",
-                fontSize: "16px",
+                color: "#ffffff",
+                fontSize: "18px",
                 fontWeight: 700,
                 margin: 0,
                 fontFamily: "'DM Sans', sans-serif",
@@ -798,66 +1398,178 @@ export default function App() {
                 Materials Required
               </h3>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
-              <div style={{
-                background: "rgba(245,158,11,0.1)",
-                border: "1px solid rgba(245,158,11,0.2)",
-                borderRadius: "10px",
-                padding: "12px",
-              }}>
-                <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Adhesive</div>
-                <div style={{ color: "#f59e0b", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
-                  {materials.adhesive}<span style={{ fontSize: "12px", color: "#94a3b8" }}> kg</span>
+            
+            {/* Standard Materials */}
+            <div style={{ marginBottom: "16px" }}>
+              <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "8px", fontFamily: "'DM Sans', sans-serif" }}>Standard Materials</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
+                <div style={{
+                  background: "rgba(245,158,11,0.1)",
+                  border: "1px solid rgba(245,158,11,0.2)",
+                  borderRadius: "10px",
+                  padding: "12px",
+                }}>
+                  <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Adhesive</div>
+                  <div style={{ color: "#f59e0b", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                    {materials.adhesive}<span style={{ fontSize: "12px", color: "#94a3b8" }}> kg</span>
+                  </div>
                 </div>
-              </div>
-              <div style={{
-                background: "rgba(245,158,11,0.1)",
-                border: "1px solid rgba(245,158,11,0.2)",
-                borderRadius: "10px",
-                padding: "12px",
-              }}>
-                <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Grout</div>
-                <div style={{ color: "#f59e0b", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
-                  {materials.grout}<span style={{ fontSize: "12px", color: "#94a3b8" }}> kg</span>
+                <div style={{
+                  background: "rgba(245,158,11,0.1)",
+                  border: "1px solid rgba(245,158,11,0.2)",
+                  borderRadius: "10px",
+                  padding: "12px",
+                }}>
+                  <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Grout</div>
+                  <div style={{ color: "#f59e0b", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                    {materials.grout}<span style={{ fontSize: "12px", color: "#94a3b8" }}> kg</span>
+                  </div>
                 </div>
-              </div>
-              <div style={{
-                background: "rgba(245,158,11,0.1)",
-                border: "1px solid rgba(245,158,11,0.2)",
-                borderRadius: "10px",
-                padding: "12px",
-              }}>
-                <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Primer</div>
-                <div style={{ color: "#f59e0b", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
-                  {materials.primer}<span style={{ fontSize: "12px", color: "#94a3b8" }}> L</span>
+                <div style={{
+                  background: "rgba(245,158,11,0.1)",
+                  border: "1px solid rgba(245,158,11,0.2)",
+                  borderRadius: "10px",
+                  padding: "12px",
+                }}>
+                  <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Primer</div>
+                  <div style={{ color: "#f59e0b", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                    {materials.primer}<span style={{ fontSize: "12px", color: "#94a3b8" }}> L</span>
+                  </div>
                 </div>
-              </div>
-              <div style={{
-                background: "rgba(245,158,11,0.1)",
-                border: "1px solid rgba(245,158,11,0.2)",
-                borderRadius: "10px",
-                padding: "12px",
-              }}>
-                <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Sealer</div>
-                <div style={{ color: "#f59e0b", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
-                  {materials.sealer}<span style={{ fontSize: "12px", color: "#94a3b8" }}> L</span>
+                <div style={{
+                  background: "rgba(245,158,11,0.1)",
+                  border: "1px solid rgba(245,158,11,0.2)",
+                  borderRadius: "10px",
+                  padding: "12px",
+                }}>
+                  <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Sealer</div>
+                  <div style={{ color: "#f59e0b", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                    {materials.sealer}<span style={{ fontSize: "12px", color: "#94a3b8" }}> L</span>
+                  </div>
                 </div>
               </div>
             </div>
+
+            {/* Floor Materials */}
+            {(parseFloat(surfaceMaterials.cementBoard) > 0 || parseFloat(surfaceMaterials.ditraMat) > 0 || parseFloat(surfaceMaterials.floorTanking) > 0) && (
+              <div style={{ marginBottom: "16px" }}>
+                <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "8px", fontFamily: "'DM Sans', sans-serif" }}>Floor Materials</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
+                  {parseFloat(surfaceMaterials.cementBoard) > 0 && (
+                    <div style={{
+                      background: "rgba(59,130,246,0.1)",
+                      border: "1px solid rgba(59,130,246,0.2)",
+                      borderRadius: "10px",
+                      padding: "12px",
+                    }}>
+                      <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Cement Board</div>
+                      <div style={{ color: "#3b82f6", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                        {surfaceMaterials.cementBoard}<span style={{ fontSize: "12px", color: "#94a3b8" }}> m²</span>
+                      </div>
+                    </div>
+                  )}
+                  {parseFloat(surfaceMaterials.ditraMat) > 0 && (
+                    <div style={{
+                      background: "rgba(59,130,246,0.1)",
+                      border: "1px solid rgba(59,130,246,0.2)",
+                      borderRadius: "10px",
+                      padding: "12px",
+                    }}>
+                      <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Ditra Mat</div>
+                      <div style={{ color: "#3b82f6", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                        {surfaceMaterials.ditraMat}<span style={{ fontSize: "12px", color: "#94a3b8" }}> m²</span>
+                      </div>
+                    </div>
+                  )}
+                  {parseFloat(surfaceMaterials.floorTanking) > 0 && (
+                    <div style={{
+                      background: "rgba(59,130,246,0.1)",
+                      border: "1px solid rgba(59,130,246,0.2)",
+                      borderRadius: "10px",
+                      padding: "12px",
+                    }}>
+                      <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Floor Tanking</div>
+                      <div style={{ color: "#3b82f6", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                        {surfaceMaterials.floorTanking}<span style={{ fontSize: "12px", color: "#94a3b8" }}> L</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Wall Materials */}
+            {(parseFloat(surfaceMaterials.wallTanking) > 0 || parseFloat(surfaceMaterials.tileTrim) > 0 || parseFloat(surfaceMaterials.wallPrimer) > 0) && (
+              <div>
+                <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "8px", fontFamily: "'DM Sans', sans-serif" }}>Wall Materials</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" }}>
+                  {parseFloat(surfaceMaterials.wallTanking) > 0 && (
+                    <div style={{
+                      background: "rgba(168,85,247,0.1)",
+                      border: "1px solid rgba(168,85,247,0.2)",
+                      borderRadius: "10px",
+                      padding: "12px",
+                    }}>
+                      <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Wall Tanking</div>
+                      <div style={{ color: "#a855f7", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                        {surfaceMaterials.wallTanking}<span style={{ fontSize: "12px", color: "#94a3b8" }}> L</span>
+                      </div>
+                    </div>
+                  )}
+                  {parseFloat(surfaceMaterials.tileTrim) > 0 && (
+                    <div style={{
+                      background: "rgba(168,85,247,0.1)",
+                      border: "1px solid rgba(168,85,247,0.2)",
+                      borderRadius: "10px",
+                      padding: "12px",
+                    }}>
+                      <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Tile Trim</div>
+                      <div style={{ color: "#a855f7", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                        {surfaceMaterials.tileTrim}<span style={{ fontSize: "12px", color: "#94a3b8" }}> m</span>
+                      </div>
+                    </div>
+                  )}
+                  {parseFloat(surfaceMaterials.wallPrimer) > 0 && (
+                    <div style={{
+                      background: "rgba(168,85,247,0.1)",
+                      border: "1px solid rgba(168,85,247,0.2)",
+                      borderRadius: "10px",
+                      padding: "12px",
+                    }}>
+                      <div style={{ color: "#94a3b8", fontSize: "11px", fontWeight: 600, textTransform: "uppercase", marginBottom: "4px", fontFamily: "'DM Sans', sans-serif" }}>Wall Primer</div>
+                      <div style={{ color: "#a855f7", fontSize: "20px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                        {surfaceMaterials.wallPrimer}<span style={{ fontSize: "12px", color: "#94a3b8" }}> L</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Pricing & Costing */}
           <div style={{
-            background: "linear-gradient(160deg, rgba(30,41,59,0.95), rgba(15,23,42,0.98))",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: "16px",
-            padding: "20px",
+            background: "linear-gradient(145deg, rgba(30, 41, 59, 0.6), rgba(15, 23, 42, 0.8))",
+            backdropFilter: "blur(20px)",
+            border: "1px solid rgba(148, 163, 184, 0.1)",
+            borderRadius: "20px",
+            padding: "24px",
+            boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
           }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
-              <DollarSign size={20} color="#f59e0b" />
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+              <div style={{
+                background: "linear-gradient(135deg, #f59e0b 0%, #fb923c 100%)",
+                borderRadius: "10px",
+                padding: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}>
+                <DollarSign size={20} color="#000" />
+              </div>
               <h3 style={{
-                color: "#f1f5f9",
-                fontSize: "16px",
+                color: "#ffffff",
+                fontSize: "18px",
                 fontWeight: 700,
                 margin: 0,
                 fontFamily: "'DM Sans', sans-serif",
@@ -938,6 +1650,95 @@ export default function App() {
                   style={inputStyle}
                 />
               </div>
+              
+              {/* Floor Materials Pricing */}
+              {parseFloat(surfaceMaterials.cementBoard) > 0 && (
+                <div>
+                  <label style={labelStyle}>Cement Board (£/m²)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="15.00"
+                    value={pricing.cementBoardPrice}
+                    onChange={(e) => setPricing({ ...pricing, cementBoardPrice: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+              )}
+              {parseFloat(surfaceMaterials.ditraMat) > 0 && (
+                <div>
+                  <label style={labelStyle}>Ditra Mat (£/m²)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="20.00"
+                    value={pricing.ditraMatPrice}
+                    onChange={(e) => setPricing({ ...pricing, ditraMatPrice: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+              )}
+              {parseFloat(surfaceMaterials.floorTanking) > 0 && (
+                <div>
+                  <label style={labelStyle}>Floor Tanking (£/L)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="25.00"
+                    value={pricing.floorTankingPrice}
+                    onChange={(e) => setPricing({ ...pricing, floorTankingPrice: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+              )}
+              
+              {/* Wall Materials Pricing */}
+              {parseFloat(surfaceMaterials.wallTanking) > 0 && (
+                <div>
+                  <label style={labelStyle}>Wall Tanking (£/L)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="22.00"
+                    value={pricing.wallTankingPrice}
+                    onChange={(e) => setPricing({ ...pricing, wallTankingPrice: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+              )}
+              {parseFloat(surfaceMaterials.tileTrim) > 0 && (
+                <div>
+                  <label style={labelStyle}>Tile Trim (£/m)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="3.50"
+                    value={pricing.tileTrimPrice}
+                    onChange={(e) => setPricing({ ...pricing, tileTrimPrice: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+              )}
+              {parseFloat(surfaceMaterials.wallPrimer) > 0 && (
+                <div>
+                  <label style={labelStyle}>Wall Primer (£/L)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="10.00"
+                    value={pricing.wallPrimerPrice}
+                    onChange={(e) => setPricing({ ...pricing, wallPrimerPrice: e.target.value })}
+                    style={inputStyle}
+                  />
+                </div>
+              )}
+              
               <div>
                 <label style={labelStyle}>Markup %</label>
                 <input
@@ -956,10 +1757,12 @@ export default function App() {
             {/* Cost Summary */}
             {subtotal > 0 && (
               <div style={{
-                background: "linear-gradient(135deg, rgba(34,197,94,0.1), rgba(22,163,74,0.05))",
-                border: "1px solid rgba(34,197,94,0.2)",
-                borderRadius: "12px",
-                padding: "16px",
+                background: "linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(22, 163, 74, 0.1))",
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(34, 197, 94, 0.25)",
+                borderRadius: "16px",
+                padding: "20px",
+                boxShadow: "0 4px 16px rgba(0, 0, 0, 0.2)",
               }}>
                 <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                   {costs.tiles > 0 && (
@@ -998,6 +1801,42 @@ export default function App() {
                       <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{costs.sealer.toFixed(2)}</span>
                     </div>
                   )}
+                  {costs.cementBoard > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>Cement Board</span>
+                      <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{costs.cementBoard.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {costs.ditraMat > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>Ditra Mat</span>
+                      <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{costs.ditraMat.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {costs.floorTanking > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>Floor Tanking</span>
+                      <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{costs.floorTanking.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {costs.wallTanking > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>Wall Tanking</span>
+                      <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{costs.wallTanking.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {costs.tileTrim > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>Tile Trim</span>
+                      <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{costs.tileTrim.toFixed(2)}</span>
+                    </div>
+                  )}
+                  {costs.wallPrimer > 0 && (
+                    <div style={{ display: "flex", justifyContent: "space-between" }}>
+                      <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>Wall Primer</span>
+                      <span style={{ color: "#e2e8f0", fontSize: "13px", fontWeight: 600, fontFamily: "'DM Mono', monospace" }}>£{costs.wallPrimer.toFixed(2)}</span>
+                    </div>
+                  )}
                   <div style={{ height: "1px", background: "rgba(255,255,255,0.1)", margin: "4px 0" }}></div>
                   <div style={{ display: "flex", justifyContent: "space-between" }}>
                     <span style={{ color: "#94a3b8", fontSize: "13px", fontFamily: "'DM Sans', sans-serif" }}>Subtotal</span>
@@ -1018,51 +1857,69 @@ export default function App() {
           </div>
 
           {/* Export Buttons */}
-          <div style={{ display: "flex", gap: "12px" }}>
+          <div style={{ display: "flex", gap: "16px" }}>
             <button
               onClick={exportToWhatsApp}
               style={{
                 flex: 1,
-                background: "linear-gradient(135deg, #22c55e, #16a34a)",
+                background: "linear-gradient(135deg, #34d399, #10b981)",
                 border: "none",
                 color: "#000",
-                borderRadius: "12px",
-                padding: "12px",
+                borderRadius: "14px",
+                padding: "16px",
                 cursor: "pointer",
-                fontSize: "14px",
+                fontSize: "15px",
                 fontWeight: 700,
                 fontFamily: "'DM Sans', sans-serif",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "8px",
-                transition: "all 0.2s ease",
+                gap: "10px",
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                boxShadow: "0 8px 24px rgba(34, 197, 94, 0.3)",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = "translateY(-2px)";
+                e.target.style.boxShadow = "0 12px 32px rgba(34, 197, 94, 0.4)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 8px 24px rgba(34, 197, 94, 0.3)";
               }}
             >
-              <Share2 size={18} />
+              <Share2 size={20} />
               Share via WhatsApp
             </button>
             <button
               onClick={exportToFile}
               style={{
                 flex: 1,
-                background: "linear-gradient(135deg, #3b82f6, #2563eb)",
+                background: "linear-gradient(135deg, #60a5fa, #3b82f6)",
                 border: "none",
-                color: "#fff",
-                borderRadius: "12px",
-                padding: "12px",
+                color: "#000",
+                borderRadius: "14px",
+                padding: "16px",
                 cursor: "pointer",
-                fontSize: "14px",
+                fontSize: "15px",
                 fontWeight: 700,
                 fontFamily: "'DM Sans', sans-serif",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                gap: "8px",
-                transition: "all 0.2s ease",
+                gap: "10px",
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                boxShadow: "0 8px 24px rgba(59, 130, 246, 0.3)",
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = "translateY(-2px)";
+                e.target.style.boxShadow = "0 12px 32px rgba(59, 130, 246, 0.4)";
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = "translateY(0)";
+                e.target.style.boxShadow = "0 8px 24px rgba(59, 130, 246, 0.3)";
               }}
             >
-              <Download size={18} />
+              <Download size={20} />
               Download Estimate
             </button>
           </div>
@@ -1071,31 +1928,58 @@ export default function App() {
 
       {/* Grand Summary Bar */}
       <div style={{
-        maxWidth: "720px",
-        margin: "0 auto 24px",
-        background: "linear-gradient(135deg, rgba(245,158,11,0.12), rgba(217,119,6,0.06))",
-        border: "1px solid rgba(245,158,11,0.2)",
-        borderRadius: "14px",
-        padding: "16px 24px",
+        maxWidth: "900px",
+        margin: "0 auto 32px",
+        background: "linear-gradient(135deg, rgba(251, 146, 60, 0.15), rgba(245, 158, 11, 0.1))",
+        backdropFilter: "blur(10px)",
+        border: "1px solid rgba(251, 146, 60, 0.2)",
+        borderRadius: "20px",
+        padding: "24px 32px",
         display: "grid",
-        gridTemplateColumns: "repeat(4, 1fr)",
-        gap: "16px",
+        gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+        gap: "24px",
+        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.3)",
       }}>
         {[
-          { label: "Rooms", value: rooms.length, color: "#e2e8f0" },
-          { label: "Areas", value: grandTotals.totalAreas, color: "#e2e8f0" },
-          { label: "Total m²", value: grandTotals.totalArea.toFixed(2), color: "#f59e0b" },
-          { label: "Total Tiles", value: grandTotals.totalTiles, color: "#22c55e" },
+          { label: "Rooms", value: rooms.length, color: "#ffffff", icon: "🏠" },
+          { label: "Areas", value: grandTotals.totalAreas, color: "#ffffff", icon: "📐" },
+          { label: "Total m²", value: grandTotals.totalArea.toFixed(2), color: "#fb923c", icon: "📏" },
+          { label: "Tiles", value: grandTotals.totalTiles, color: "#34d399", icon: "◧" },
         ].map((stat) => (
           <div key={stat.label} style={{ textAlign: "center" }}>
-            <div style={{ color: "#64748b", fontSize: "10px", fontWeight: 600, textTransform: "uppercase", letterSpacing: "1.5px", marginBottom: "2px" }}>{stat.label}</div>
-            <div style={{ color: stat.color, fontSize: "22px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>{stat.value}</div>
+            <div style={{ 
+              fontSize: "20px", 
+              marginBottom: "6px",
+              filter: "grayscale(0.2)",
+            }}>
+              {stat.icon}
+            </div>
+            <div style={{ 
+              color: "#64748b", 
+              fontSize: "11px", 
+              fontWeight: 600, 
+              textTransform: "uppercase", 
+              letterSpacing: "1.5px", 
+              marginBottom: "6px",
+              fontFamily: "'DM Sans', sans-serif",
+            }}>
+              {stat.label}
+            </div>
+            <div style={{ 
+              color: stat.color, 
+              fontSize: "28px", 
+              fontWeight: 800, 
+              fontFamily: "'DM Mono', monospace",
+              lineHeight: 1,
+            }}>
+              {stat.value}
+            </div>
           </div>
         ))}
       </div>
 
       {/* Rooms */}
-      <div style={{ maxWidth: "720px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "20px" }}>
+      <div style={{ maxWidth: "900px", margin: "0 auto", display: "flex", flexDirection: "column", gap: "24px" }}>
         {rooms.map((room, i) => (
           <RoomCard
             key={room.id}
@@ -1110,17 +1994,25 @@ export default function App() {
         <button
           onClick={addRoom}
           style={{
-            background: "linear-gradient(135deg, #f59e0b, #d97706)",
+            background: "linear-gradient(135deg, #f59e0b 0%, #fb923c 100%)",
             border: "none",
             color: "#000",
-            borderRadius: "12px",
-            padding: "14px",
+            borderRadius: "16px",
+            padding: "18px",
             cursor: "pointer",
-            fontSize: "15px",
+            fontSize: "16px",
             fontWeight: 700,
             fontFamily: "'DM Sans', sans-serif",
-            boxShadow: "0 4px 20px rgba(245,158,11,0.3)",
-            transition: "all 0.2s ease",
+            boxShadow: "0 8px 32px rgba(251, 146, 60, 0.4)",
+            transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          }}
+          onMouseEnter={(e) => {
+            e.target.style.transform = "translateY(-2px)";
+            e.target.style.boxShadow = "0 12px 40px rgba(251, 146, 60, 0.5)";
+          }}
+          onMouseLeave={(e) => {
+            e.target.style.transform = "translateY(0)";
+            e.target.style.boxShadow = "0 8px 32px rgba(251, 146, 60, 0.4)";
           }}
         >
           + Add Room
