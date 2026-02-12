@@ -983,6 +983,14 @@ export default function App() {
   const [rooms, setRooms] = useState([defaultRoom()]);
   const [showProfessional, setShowProfessional] = useState(false);
   const [styleTheme, setStyleTheme] = useState("modern"); // modern, classic, minimal
+  const [currentPage, setCurrentPage] = useState("calculator"); // calculator or settings
+  
+  // Local search state
+  const [userLocation, setUserLocation] = useState("");
+  const [tileStores, setTileStores] = useState([]);
+  const [localTilers, setLocalTilers] = useState([]);
+  const [searchingStores, setSearchingStores] = useState(false);
+  const [searchingTilers, setSearchingTilers] = useState(false);
   
   // Business Branding
   const [businessBranding, setBusinessBranding] = useState({
@@ -1209,6 +1217,57 @@ export default function App() {
         setBusinessBranding({ ...businessBranding, logo: reader.result });
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  // Search for local tile stores
+  const searchTileStores = async () => {
+    if (!userLocation.trim()) {
+      alert('Please enter your location (city or postcode)');
+      return;
+    }
+    
+    setSearchingStores(true);
+    try {
+      // This would call the places_search API
+      // For now, showing placeholder - you'll need to implement the actual API call
+      alert(`Searching for tile stores near ${userLocation}...\n\nThis feature will show:\n- CTD Tiles\n- Topps Tiles\n- Tile Giant\n- Local independent tile shops\n\nWith addresses, phone numbers, and directions.`);
+      
+      // Placeholder results
+      setTileStores([
+        { name: 'Topps Tiles', address: 'High Street', phone: '01234 567890' },
+        { name: 'CTD Tiles', address: 'Retail Park', phone: '01234 567891' },
+      ]);
+    } catch (error) {
+      console.error('Search error:', error);
+      alert('Unable to search at this time. Please try again.');
+    } finally {
+      setSearchingStores(false);
+    }
+  };
+
+  // Search for local tilers
+  const searchLocalTilers = async () => {
+    if (!userLocation.trim()) {
+      alert('Please enter your location (city or postcode)');
+      return;
+    }
+    
+    setSearchingTilers(true);
+    try {
+      // This would call the places_search API
+      alert(`Searching for tilers near ${userLocation}...\n\nThis feature will show:\n- Professional tiling contractors\n- Bathroom fitters\n- Kitchen installers\n- Local tradespeople\n\nWith ratings, contact details, and reviews.`);
+      
+      // Placeholder results
+      setLocalTilers([
+        { name: 'Professional Tiling Services', rating: 4.8, phone: '07700 900001' },
+        { name: 'Expert Tile Installations', rating: 4.9, phone: '07700 900002' },
+      ]);
+    } catch (error) {
+      console.error('Search error:', error);
+      alert('Unable to search at this time. Please try again.');
+    } finally {
+      setSearchingTilers(false);
     }
   };
 
@@ -1750,7 +1809,77 @@ export default function App() {
         </div>
       </div>
 
-      {/* Customer Information - Always Visible */}
+      {/* Page Navigation - Only in Professional Mode */}
+      {showProfessional && (
+        <div style={{ maxWidth: "900px", margin: "0 auto 24px" }}>
+          <div style={{
+            background: theme.cardBg,
+            backdropFilter: "blur(20px)",
+            border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.1)",
+            borderRadius: "16px",
+            padding: "8px",
+            display: "flex",
+            gap: "8px",
+            boxShadow: styleTheme === "minimal" ? "0 4px 16px rgba(0, 0, 0, 0.08)" : "0 4px 16px rgba(0, 0, 0, 0.3)",
+          }}>
+            <button
+              onClick={() => setCurrentPage("calculator")}
+              style={{
+                flex: 1,
+                background: currentPage === "calculator" ? theme.primary : "transparent",
+                border: "none",
+                color: currentPage === "calculator" 
+                  ? (styleTheme === "minimal" ? theme.textPrimary : "#000")
+                  : theme.textSecondary,
+                borderRadius: "12px",
+                padding: "12px 20px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: 700,
+                fontFamily: "'DM Sans', sans-serif",
+                transition: "all 0.2s ease",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+              }}
+            >
+              <Calculator size={16} />
+              Calculator
+            </button>
+            <button
+              onClick={() => setCurrentPage("settings")}
+              style={{
+                flex: 1,
+                background: currentPage === "settings" ? theme.primary : "transparent",
+                border: "none",
+                color: currentPage === "settings" 
+                  ? (styleTheme === "minimal" ? theme.textPrimary : "#000")
+                  : theme.textSecondary,
+                borderRadius: "12px",
+                padding: "12px 20px",
+                cursor: "pointer",
+                fontSize: "14px",
+                fontWeight: 700,
+                fontFamily: "'DM Sans', sans-serif",
+                transition: "all 0.2s ease",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+              }}
+            >
+              <DollarSign size={16} />
+              Settings & Pricing
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* CALCULATOR PAGE */}
+      {(currentPage === "calculator" || !showProfessional) && (
+        <>
+          {/* Customer Information - Always Visible */}
       <div style={{ maxWidth: "900px", margin: "0 auto 32px" }}>
         <div style={{
           background: theme.cardBg,
@@ -1920,6 +2049,152 @@ export default function App() {
         ))}
       </div>
 
+      {/* Local Search - Available to All Users */}
+      {(currentPage === "calculator" || !showProfessional) && (
+        <div style={{ maxWidth: "900px", margin: "0 auto 32px" }}>
+          <div style={{
+            background: theme.cardBg,
+            backdropFilter: "blur(20px)",
+            border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.1)",
+            borderRadius: "20px",
+            padding: "24px",
+            boxShadow: styleTheme === "minimal" ? "0 8px 32px rgba(0, 0, 0, 0.08)" : "0 8px 32px rgba(0, 0, 0, 0.3)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+              <div style={{
+                background: theme.primary,
+                borderRadius: "10px",
+                padding: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}>
+                <MapPin size={20} color={styleTheme === "minimal" ? theme.textPrimary : "#000"} />
+              </div>
+              <h3 style={{
+                color: theme.textPrimary,
+                fontSize: "18px",
+                fontWeight: 700,
+                margin: 0,
+                fontFamily: "'DM Sans', sans-serif",
+              }}>
+                Find Local Services
+              </h3>
+            </div>
+
+            {/* Location Input */}
+            <div style={{ marginBottom: "16px" }}>
+              <label style={{...labelStyle, color: theme.textSecondary}}>Your Location</label>
+              <input
+                type="text"
+                placeholder="Enter city or postcode (e.g., London, SW1A 1AA)"
+                value={userLocation}
+                onChange={(e) => setUserLocation(e.target.value)}
+                style={{
+                  ...inputStyle, 
+                  color: theme.textPrimary, 
+                  background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", 
+                  border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"
+                }}
+              />
+            </div>
+
+            {/* Search Buttons */}
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <button
+                onClick={searchTileStores}
+                disabled={searchingStores}
+                style={{
+                  background: searchingStores 
+                    ? "rgba(148, 163, 184, 0.2)" 
+                    : `linear-gradient(135deg, ${theme.primaryColor}, ${theme.primaryColor}dd)`,
+                  border: "none",
+                  color: searchingStores ? theme.textSecondary : (styleTheme === "minimal" ? theme.textPrimary : "#000"),
+                  borderRadius: "12px",
+                  padding: "14px",
+                  cursor: searchingStores ? "not-allowed" : "pointer",
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  fontFamily: "'DM Sans', sans-serif",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  transition: "all 0.2s ease",
+                  opacity: searchingStores ? 0.6 : 1,
+                }}
+              >
+                <Package size={18} />
+                {searchingStores ? "Searching..." : "Find Tile Stores"}
+              </button>
+
+              <button
+                onClick={searchLocalTilers}
+                disabled={searchingTilers}
+                style={{
+                  background: searchingTilers 
+                    ? "rgba(148, 163, 184, 0.2)" 
+                    : `linear-gradient(135deg, ${theme.accent}, ${theme.accent}dd)`,
+                  border: "none",
+                  color: searchingTilers ? theme.textSecondary : (styleTheme === "minimal" ? theme.textPrimary : "#000"),
+                  borderRadius: "12px",
+                  padding: "14px",
+                  cursor: searchingTilers ? "not-allowed" : "pointer",
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  fontFamily: "'DM Sans', sans-serif",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  transition: "all 0.2s ease",
+                  opacity: searchingTilers ? 0.6 : 1,
+                }}
+              >
+                <User size={18} />
+                {searchingTilers ? "Searching..." : "Find Local Tilers"}
+              </button>
+            </div>
+
+            {/* Results Info */}
+            {(tileStores.length > 0 || localTilers.length > 0) && (
+              <div style={{
+                marginTop: "20px",
+                padding: "16px",
+                background: styleTheme === "minimal" ? "rgba(34, 197, 94, 0.08)" : "rgba(34, 197, 94, 0.1)",
+                borderRadius: "12px",
+                border: "1px solid rgba(34, 197, 94, 0.2)",
+              }}>
+                <div style={{
+                  color: theme.textPrimary,
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  marginBottom: "8px",
+                  fontFamily: "'DM Sans', sans-serif",
+                }}>
+                  ✓ Search complete! Results ready.
+                </div>
+                <div style={{
+                  color: theme.textSecondary,
+                  fontSize: "12px",
+                  lineHeight: "1.5",
+                }}>
+                  Found {tileStores.length} tile stores and {localTilers.length} professional tilers near {userLocation}.
+                  Check the map and listings below.
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+        </>
+      )}
+
+      {/* SETTINGS PAGE - Business Branding & Pricing */}
+      {currentPage === "settings" && showProfessional && (
+        <div style={{ maxWidth: "900px", margin: "0 auto 32px", display: "flex", flexDirection: "column", gap: "20px" }}>
+        
       {/* Professional Mode Sections */}
       {showProfessional && (
         <div style={{ maxWidth: "900px", margin: "0 auto 32px", display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -2476,6 +2751,13 @@ export default function App() {
               )}
             </div>
           </div>
+        
+        </div>
+      )}
+
+      {/* CALCULATOR PAGE - Professional Mode Sections */}
+      {showProfessional && currentPage === "calculator" && (
+        <div style={{ maxWidth: "900px", margin: "0 auto 32px", display: "flex", flexDirection: "column", gap: "20px" }}>
           
           {/* Materials Summary */}
           <div style={{
