@@ -11,8 +11,12 @@ A professional tiling calculator that allows you to calculate tile requirements 
 - **Floor-Specific Materials**: Cement board, Ditra mat, floor tanking
 - **Wall-Specific Materials**: Wall tanking, tile trim, wall primer
 - **Flexible Tile Sizes**: Pre-configured common sizes plus custom tile dimensions
+- **Trowel Size Selection**: Choose from 6mm, 8mm, 10mm, or 12mm notched trowels for accurate adhesive calculations
+- **Grout Joint Width**: Select from 1mm to 6mm joint widths for precise grout calculations
+- **Bag Quantity Display**: Adhesive shown in 20kg bags, grout in 2.5kg bags
 - **Wastage Calculation**: Adjustable wastage percentage (5-20%)
 - **Real-Time Calculations**: Instant updates for area, tiles needed, and total quantities
+- **Find Local Services**: Search for tile stores and professional tilers in your area
 - **Mobile Responsive**: Works perfectly on all devices
 
 ### Professional Mode Features
@@ -84,6 +88,38 @@ A professional tiling calculator that allows you to calculate tile requirements 
 - 600 × 1200mm
 - 800 × 800mm
 - Custom sizes (specify width and height in mm)
+
+## 🗺️ Local Services Feature
+
+### Find Tile Stores
+Locate nearby tile suppliers in your area:
+- **Major Chains**: Topps Tiles, CTD Tiles, Tile Giant, B&Q, Wickes
+- **Independent Shops**: Local tile specialists and showrooms
+- **Trade Suppliers**: Trade-only outlets
+- **Contact Details**: Phone numbers, addresses, opening hours
+- **Directions**: Get directions to nearest stores
+
+### Find Local Tilers
+Connect with professional tiling contractors:
+- **Verified Tradespeople**: Professional tilers in your area
+- **Ratings & Reviews**: Customer feedback and ratings
+- **Specializations**: Bathroom specialists, kitchen fitters, commercial tilers
+- **Contact Information**: Direct phone numbers and websites
+- **Service Areas**: Coverage zones and availability
+
+### How to Use
+1. Enter your **location** (city name or UK postcode)
+2. Click **"Find Tile Stores"** to locate suppliers
+3. Click **"Find Local Tilers"** to find contractors
+4. View **results** with contact details
+5. Get **directions** and make contact
+
+### Benefits
+✅ **Save Time**: Find everything you need in one place
+✅ **Compare Options**: See multiple suppliers/contractors at once
+✅ **Get Contact Info**: Direct phone numbers and addresses
+✅ **Plan Your Project**: Source materials and labor efficiently
+✅ **Free to Use**: Available in the standard version
 
 ## Getting Started
 
