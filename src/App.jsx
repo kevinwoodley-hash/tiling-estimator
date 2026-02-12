@@ -1868,293 +1868,6 @@ export default function App() {
         </button>
       </div>
 
-      {/* Pricing & Costs - Available to All Users */}
-      <div style={{ maxWidth: "900px", margin: "0 auto 32px" }}>
-        <div style={{
-          background: theme.cardBg,
-          backdropFilter: "blur(20px)",
-          border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.1)",
-          borderRadius: "20px",
-          padding: "24px",
-          boxShadow: styleTheme === "minimal" ? "0 8px 32px rgba(0, 0, 0, 0.08)" : "0 8px 32px rgba(0, 0, 0, 0.3)",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
-            <div style={{
-              background: theme.primary,
-              borderRadius: "10px",
-              padding: "8px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}>
-              <DollarSign size={20} color={styleTheme === "minimal" ? theme.textPrimary : "#000"} />
-            </div>
-            <h3 style={{
-              color: theme.textPrimary,
-              fontSize: "18px",
-              fontWeight: 700,
-              margin: 0,
-              fontFamily: "'DM Sans', sans-serif",
-            }}>
-              Pricing & Costs
-            </h3>
-          </div>
-          
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
-            <div>
-              <label style={{...labelStyle, color: theme.textSecondary}}>Day Rate (£)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="200.00"
-                value={pricing.dayRate}
-                onChange={(e) => setPricing({ ...pricing, dayRate: e.target.value })}
-                style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
-              />
-            </div>
-            <div>
-              <label style={{...labelStyle, color: theme.textSecondary}}>Labour (£/m²)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="35.00"
-                value={pricing.labourPricePerSqm}
-                onChange={(e) => setPricing({ ...pricing, labourPricePerSqm: e.target.value })}
-                style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
-              />
-            </div>
-            <div>
-              <label style={{...labelStyle, color: theme.textSecondary}}>Adhesive (£/kg)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="2.50"
-                value={pricing.adhesivePrice}
-                onChange={(e) => setPricing({ ...pricing, adhesivePrice: e.target.value })}
-                style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
-              />
-            </div>
-            <div>
-              <label style={{...labelStyle, color: theme.textSecondary}}>Grout (£/kg)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="3.00"
-                value={pricing.groutPrice}
-                onChange={(e) => setPricing({ ...pricing, groutPrice: e.target.value })}
-                style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
-              />
-            </div>
-            <div>
-              <label style={{...labelStyle, color: theme.textSecondary}}>Primer (£/L)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="8.00"
-                value={pricing.primerPrice}
-                onChange={(e) => setPricing({ ...pricing, primerPrice: e.target.value })}
-                style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
-              />
-            </div>
-            <div>
-              <label style={{...labelStyle, color: theme.textSecondary}}>Sealer (£/L)</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                placeholder="12.00"
-                value={pricing.sealerPrice}
-                onChange={(e) => setPricing({ ...pricing, sealerPrice: e.target.value })}
-                style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
-              />
-            </div>
-            
-            {/* Surface-specific material pricing */}
-            {parseFloat(surfaceMaterials.cementBoard) > 0 && (
-              <div>
-                <label style={{...labelStyle, color: theme.textSecondary}}>Cement Board (£/m²)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="15.00"
-                  value={pricing.cementBoardPrice}
-                  onChange={(e) => setPricing({ ...pricing, cementBoardPrice: e.target.value })}
-                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
-                />
-              </div>
-            )}
-            {parseFloat(surfaceMaterials.ditraMat) > 0 && (
-              <div>
-                <label style={{...labelStyle, color: theme.textSecondary}}>Ditra Mat (£/m²)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="20.00"
-                  value={pricing.ditraMatPrice}
-                  onChange={(e) => setPricing({ ...pricing, ditraMatPrice: e.target.value })}
-                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
-                />
-              </div>
-            )}
-            {parseFloat(surfaceMaterials.floorTanking) > 0 && (
-              <div>
-                <label style={{...labelStyle, color: theme.textSecondary}}>Floor Tanking (£/L)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="25.00"
-                  value={pricing.floorTankingPrice}
-                  onChange={(e) => setPricing({ ...pricing, floorTankingPrice: e.target.value })}
-                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
-                />
-              </div>
-            )}
-            {parseFloat(surfaceMaterials.wallTanking) > 0 && (
-              <div>
-                <label style={{...labelStyle, color: theme.textSecondary}}>Wall Tanking (£/L)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="22.00"
-                  value={pricing.wallTankingPrice}
-                  onChange={(e) => setPricing({ ...pricing, wallTankingPrice: e.target.value })}
-                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
-                />
-              </div>
-            )}
-            {parseFloat(surfaceMaterials.tileTrim) > 0 && (
-              <div>
-                <label style={{...labelStyle, color: theme.textSecondary}}>Tile Trim (£/m)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="3.50"
-                  value={pricing.tileTrimPrice}
-                  onChange={(e) => setPricing({ ...pricing, tileTrimPrice: e.target.value })}
-                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
-                />
-              </div>
-            )}
-            {parseFloat(surfaceMaterials.wallPrimer) > 0 && (
-              <div>
-                <label style={{...labelStyle, color: theme.textSecondary}}>Wall Primer (£/L)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="10.00"
-                  value={pricing.wallPrimerPrice}
-                  onChange={(e) => setPricing({ ...pricing, wallPrimerPrice: e.target.value })}
-                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
-                />
-              </div>
-            )}
-            
-            <div>
-              <label style={{...labelStyle, color: theme.textSecondary}}>Markup %</label>
-              <input
-                type="number"
-                step="1"
-                min="0"
-                max="100"
-                placeholder="15"
-                value={pricing.markup}
-                onChange={(e) => setPricing({ ...pricing, markup: parseFloat(e.target.value) || 0 })}
-                style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
-              />
-            </div>
-          </div>
-          
-          {/* VAT Toggle */}
-          <div style={{
-            marginTop: "16px",
-            padding: "16px",
-            background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)",
-            borderRadius: "12px",
-            border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)",
-          }}>
-            <label style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "12px",
-              cursor: "pointer",
-              fontFamily: "'DM Sans', sans-serif",
-            }}>
-              <input
-                type="checkbox"
-                checked={pricing.includeVAT}
-                onChange={(e) => setPricing({ ...pricing, includeVAT: e.target.checked })}
-                style={{ 
-                  cursor: "pointer", 
-                  width: "20px", 
-                  height: "20px",
-                }}
-              />
-              <span style={{ 
-                color: theme.textPrimary, 
-                fontSize: "15px", 
-                fontWeight: 600,
-                flex: 1,
-              }}>
-                Include VAT
-              </span>
-              {pricing.includeVAT && (
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  value={pricing.vatRate}
-                  onChange={(e) => setPricing({ ...pricing, vatRate: parseFloat(e.target.value) || 20 })}
-                  style={{
-                    ...inputStyle,
-                    width: "80px",
-                    padding: "8px 12px",
-                    color: theme.textPrimary,
-                    background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.05)" : "rgba(148, 163, 184, 0.1)",
-                    border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.15)" : "1px solid rgba(148, 163, 184, 0.2)",
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                />
-              )}
-              {pricing.includeVAT && (
-                <span style={{ color: theme.textSecondary, fontSize: "14px", fontWeight: 600 }}>
-                  %
-                </span>
-              )}
-            </label>
-            {pricing.includeVAT && vatAmount > 0 && (
-              <div style={{
-                marginTop: "12px",
-                padding: "12px",
-                background: `${theme.accent}20`,
-                borderRadius: "8px",
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}>
-                <span style={{ color: theme.textPrimary, fontSize: "13px", fontWeight: 600 }}>
-                  VAT Amount:
-                </span>
-                <span style={{ color: theme.accent, fontSize: "16px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
-                  £{vatAmount.toFixed(2)}
-                </span>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
       {/* Grand Summary Bar */}
       <div style={{
         maxWidth: "900px",
@@ -2356,6 +2069,291 @@ export default function App() {
                   style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
                 />
               </div>
+            </div>
+          </div>
+          
+          {/* Pricing & Costs - Professional Mode Only */}
+          <div style={{
+            background: theme.cardBg,
+            backdropFilter: "blur(20px)",
+            border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.1)",
+            borderRadius: "20px",
+            padding: "24px",
+            boxShadow: styleTheme === "minimal" ? "0 8px 32px rgba(0, 0, 0, 0.08)" : "0 8px 32px rgba(0, 0, 0, 0.3)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+              <div style={{
+                background: theme.primary,
+                borderRadius: "10px",
+                padding: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}>
+                <DollarSign size={20} color={styleTheme === "minimal" ? theme.textPrimary : "#000"} />
+              </div>
+              <h3 style={{
+                color: theme.textPrimary,
+                fontSize: "18px",
+                fontWeight: 700,
+                margin: 0,
+                fontFamily: "'DM Sans', sans-serif",
+              }}>
+                Pricing & Costs
+              </h3>
+            </div>
+            
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Day Rate (£)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="200.00"
+                  value={pricing.dayRate}
+                  onChange={(e) => setPricing({ ...pricing, dayRate: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Labour (£/m²)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="35.00"
+                  value={pricing.labourPricePerSqm}
+                  onChange={(e) => setPricing({ ...pricing, labourPricePerSqm: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Adhesive (£/kg)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="2.50"
+                  value={pricing.adhesivePrice}
+                  onChange={(e) => setPricing({ ...pricing, adhesivePrice: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Grout (£/kg)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="3.00"
+                  value={pricing.groutPrice}
+                  onChange={(e) => setPricing({ ...pricing, groutPrice: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Primer (£/L)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="8.00"
+                  value={pricing.primerPrice}
+                  onChange={(e) => setPricing({ ...pricing, primerPrice: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Sealer (£/L)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  placeholder="12.00"
+                  value={pricing.sealerPrice}
+                  onChange={(e) => setPricing({ ...pricing, sealerPrice: e.target.value })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+              
+              {/* Surface-specific material pricing */}
+              {parseFloat(surfaceMaterials.cementBoard) > 0 && (
+                <div>
+                  <label style={{...labelStyle, color: theme.textSecondary}}>Cement Board (£/m²)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="15.00"
+                    value={pricing.cementBoardPrice}
+                    onChange={(e) => setPricing({ ...pricing, cementBoardPrice: e.target.value })}
+                    style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                  />
+                </div>
+              )}
+              {parseFloat(surfaceMaterials.ditraMat) > 0 && (
+                <div>
+                  <label style={{...labelStyle, color: theme.textSecondary}}>Ditra Mat (£/m²)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="20.00"
+                    value={pricing.ditraMatPrice}
+                    onChange={(e) => setPricing({ ...pricing, ditraMatPrice: e.target.value })}
+                    style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                  />
+                </div>
+              )}
+              {parseFloat(surfaceMaterials.floorTanking) > 0 && (
+                <div>
+                  <label style={{...labelStyle, color: theme.textSecondary}}>Floor Tanking (£/L)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="25.00"
+                    value={pricing.floorTankingPrice}
+                    onChange={(e) => setPricing({ ...pricing, floorTankingPrice: e.target.value })}
+                    style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                  />
+                </div>
+              )}
+              {parseFloat(surfaceMaterials.wallTanking) > 0 && (
+                <div>
+                  <label style={{...labelStyle, color: theme.textSecondary}}>Wall Tanking (£/L)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="22.00"
+                    value={pricing.wallTankingPrice}
+                    onChange={(e) => setPricing({ ...pricing, wallTankingPrice: e.target.value })}
+                    style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                  />
+                </div>
+              )}
+              {parseFloat(surfaceMaterials.tileTrim) > 0 && (
+                <div>
+                  <label style={{...labelStyle, color: theme.textSecondary}}>Tile Trim (£/m)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="3.50"
+                    value={pricing.tileTrimPrice}
+                    onChange={(e) => setPricing({ ...pricing, tileTrimPrice: e.target.value })}
+                    style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                  />
+                </div>
+              )}
+              {parseFloat(surfaceMaterials.wallPrimer) > 0 && (
+                <div>
+                  <label style={{...labelStyle, color: theme.textSecondary}}>Wall Primer (£/L)</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="10.00"
+                    value={pricing.wallPrimerPrice}
+                    onChange={(e) => setPricing({ ...pricing, wallPrimerPrice: e.target.value })}
+                    style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                  />
+                </div>
+              )}
+              
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Markup %</label>
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  max="100"
+                  placeholder="15"
+                  value={pricing.markup}
+                  onChange={(e) => setPricing({ ...pricing, markup: parseFloat(e.target.value) || 0 })}
+                  style={{...inputStyle, color: theme.textPrimary, background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"}}
+                />
+              </div>
+            </div>
+            
+            {/* VAT Toggle */}
+            <div style={{
+              marginTop: "16px",
+              padding: "16px",
+              background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)",
+              borderRadius: "12px",
+              border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)",
+            }}>
+              <label style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                cursor: "pointer",
+                fontFamily: "'DM Sans', sans-serif",
+              }}>
+                <input
+                  type="checkbox"
+                  checked={pricing.includeVAT}
+                  onChange={(e) => setPricing({ ...pricing, includeVAT: e.target.checked })}
+                  style={{ 
+                    cursor: "pointer", 
+                    width: "20px", 
+                    height: "20px",
+                  }}
+                />
+                <span style={{ 
+                  color: theme.textPrimary, 
+                  fontSize: "15px", 
+                  fontWeight: 600,
+                  flex: 1,
+                }}>
+                  Include VAT
+                </span>
+                {pricing.includeVAT && (
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="100"
+                    value={pricing.vatRate}
+                    onChange={(e) => setPricing({ ...pricing, vatRate: parseFloat(e.target.value) || 20 })}
+                    style={{
+                      ...inputStyle,
+                      width: "80px",
+                      padding: "8px 12px",
+                      color: theme.textPrimary,
+                      background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.05)" : "rgba(148, 163, 184, 0.1)",
+                      border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.15)" : "1px solid rgba(148, 163, 184, 0.2)",
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                )}
+                {pricing.includeVAT && (
+                  <span style={{ color: theme.textSecondary, fontSize: "14px", fontWeight: 600 }}>
+                    %
+                  </span>
+                )}
+              </label>
+              {pricing.includeVAT && vatAmount > 0 && (
+                <div style={{
+                  marginTop: "12px",
+                  padding: "12px",
+                  background: `${theme.accent}20`,
+                  borderRadius: "8px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}>
+                  <span style={{ color: theme.textPrimary, fontSize: "13px", fontWeight: 600 }}>
+                    VAT Amount:
+                  </span>
+                  <span style={{ color: theme.accent, fontSize: "16px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                    £{vatAmount.toFixed(2)}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
           
