@@ -15,7 +15,7 @@
 - **Grout Joint Width** - 1mm to 6mm precision settings
 - **Bag Quantities** - Shows adhesive in 20kg bags, grout in 2.5kg bags
 - **Surface-Specific** - Floor (cement board, Ditra mat, tanking) and Wall (tanking, trim, primer)
-- **Find Local Services** - Search for tile stores and professional tilers nearby
+- **Find Local Services** - Search for tile stores and professional tilers nearby (Free version exclusive)
 - **4 Beautiful Themes** - Modern Dark, Classic Blue, Minimal Light, Sunset
 - **Mobile Responsive** - Works perfectly on all devices
 
