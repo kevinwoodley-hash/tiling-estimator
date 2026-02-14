@@ -1,342 +1,342 @@
-# Tiling Estimator - Multi-Room Calculator
+# Professional Tiling Estimator
 
-A professional tiling calculator that allows you to calculate tile requirements for multiple rooms with multiple areas per room. Perfect for tilers, contractors, and homeowners planning tiling projects.
+> A comprehensive React application for professional tilers and contractors to calculate materials, generate quotes, and manage tiling projects with FreeAgent integration.
 
-## Features
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![React](https://img.shields.io/badge/react-18.3.1-blue.svg)
+![Vite](https://img.shields.io/badge/vite-5.4.2-purple.svg)
 
-### Core Calculator Features
-- **Multi-Room Support**: Add unlimited rooms to your project
-- **Multiple Areas Per Room**: Break down complex spaces into separate areas (main floor, alcoves, window recesses, etc.)
-- **Surface Type Selection**: Choose between Floor or Wall for each room
-- **Floor-Specific Materials**: Cement board, Ditra mat, floor tanking
-- **Wall-Specific Materials**: Wall tanking, tile trim, wall primer
-- **Flexible Tile Sizes**: Pre-configured common sizes plus custom tile dimensions
-- **Trowel Size Selection**: Choose from 6mm, 8mm, 10mm, or 12mm notched trowels for accurate adhesive calculations
-- **Grout Joint Width**: Select from 1mm to 6mm joint widths for precise grout calculations
-- **Bag Quantity Display**: Adhesive shown in 20kg bags, grout in 2.5kg bags
-- **Wastage Calculation**: Adjustable wastage percentage (5-20%)
-- **Real-Time Calculations**: Instant updates for area, tiles needed, and total quantities
-- **Find Local Services**: Search for tile stores and professional tilers in your area
-- **Mobile Responsive**: Works perfectly on all devices
+## ✨ Features
 
-### Professional Mode Features
-- **Customer Management**: Store customer name, phone, email, and address
-- **Business Branding**: Add company logo, VAT number, and business details
-- **FreeAgent Integration**: Export quotes directly to FreeAgent accounting software
-- **Material Calculations**: Automatic calculation of adhesive, grout, primer, and sealer requirements
-- **Cost Breakdown**: Complete pricing with day rate, labour, and materials
-- **VAT Support**: Toggle VAT on/off with adjustable rate (default 20%)
-- **Markup Management**: Adjustable profit margin percentage
-- **WhatsApp Export**: Share quotes directly via WhatsApp
-- **File Export**: Download detailed estimates as text files with branding
-- **Professional Summary**: Grand totals across all rooms and materials
+### 🆓 Free Version (Standard Calculator)
+- **Multi-Room Support** - Calculate unlimited rooms and areas
+- **Smart Material Calculations** - Automatic adhesive, grout, primer, sealer
+- **Trowel Size Selection** - 6mm to 12mm notched trowels for accurate coverage
+- **Grout Joint Width** - 1mm to 6mm precision settings
+- **Bag Quantities** - Shows adhesive in 20kg bags, grout in 2.5kg bags
+- **Surface-Specific** - Floor (cement board, Ditra mat, tanking) and Wall (tanking, trim, primer)
+- **Find Local Services** - Search for tile stores and professional tilers nearby
+- **4 Beautiful Themes** - Modern Dark, Classic Blue, Minimal Light, Sunset
+- **Mobile Responsive** - Works perfectly on all devices
 
-## 🔗 FreeAgent Integration
+### 💼 Professional Mode
+- **Business Branding** - Add company logo, VAT number, full business details
+- **Complete Pricing** - Day rate, labour per m², all material costs
+- **VAT Support** - Toggle VAT with adjustable rates (default 20%)
+- **FreeAgent Integration** - One-click export to accounting software
+- **Multiple Export Options** - WhatsApp, file download, FreeAgent API
+- **Organized Settings Page** - Tabbed interface (Business Profile, Pricing, Integrations, Preferences)
+- **Customer Management** - Store customer details for professional quotes
+- **Cost Breakdown** - Detailed pricing with subtotals, markup, VAT, total
 
-### Quick Setup
-1. Enable **Professional Mode** in the app
-2. Navigate to **FreeAgent Integration** section
-3. Get your Personal Access Token:
-   - Log in to [FreeAgent](https://www.freeagent.com)
-   - Go to **Settings** → **Developer API**
-   - Click **"Create a new app"** or use existing
-   - Generate a **Personal Access Token**
-   - Copy token into app
+## 🚀 Quick Start
 
-### What Gets Exported
-✅ **Complete Invoice/Quote** created in FreeAgent
-✅ **All line items**: Day rate, labour, materials
-✅ **Customer details** automatically added
-✅ **VAT calculated** based on your settings
-✅ **Project reference** with room count and total area
-✅ **Payment terms** set to 30 days
+### Prerequisites
+```bash
+Node.js 18+ 
+npm or yarn
+```
 
-### Benefits
-- 🚀 Instant invoice creation from quotes
-- 💷 Automatic VAT handling
-- 👥 Customer tracking in FreeAgent
-- 📊 Accurate financial records
-- ⏱️ Saves hours of manual data entry
-- 🔒 Secure API connection
+### Installation
 
-### Professional Design
-- Clean, modern interface with gradient styling
-- Toggle between simple and professional modes
-- Comprehensive cost breakdown with line items
-- Material quantities based on industry standards
+```bash
+# Clone the repository
+git clone https://github.com/yourusername/tiling-estimator.git
 
-## Area Types Supported
+# Navigate to project directory
+cd tiling-estimator
 
-- Main Floor
-- Alcove
-- Window Recess
-- Bay Window
-- Fireplace Hearth
-- Shower Area
-- Bath Surround
-- Splashback
-- Feature Wall
-- Custom Area (with custom naming)
+# Install dependencies
+npm install
 
-## Tile Sizes Included
+# Start development server
+npm run dev
+```
 
-- 300 × 300mm
-- 300 × 600mm
-- 450 × 450mm
-- 500 × 500mm
-- 600 × 600mm
-- 600 × 1200mm
-- 800 × 800mm
-- Custom sizes (specify width and height in mm)
+Access the app at `http://localhost:5173`
 
-## 🗺️ Local Services Feature
+### Build for Production
 
-### Find Tile Stores
-Locate nearby tile suppliers in your area:
-- **Major Chains**: Topps Tiles, CTD Tiles, Tile Giant, B&Q, Wickes
-- **Independent Shops**: Local tile specialists and showrooms
-- **Trade Suppliers**: Trade-only outlets
-- **Contact Details**: Phone numbers, addresses, opening hours
-- **Directions**: Get directions to nearest stores
+```bash
+# Create optimized production build
+npm run build
 
-### Find Local Tilers
-Connect with professional tiling contractors:
-- **Verified Tradespeople**: Professional tilers in your area
-- **Ratings & Reviews**: Customer feedback and ratings
-- **Specializations**: Bathroom specialists, kitchen fitters, commercial tilers
-- **Contact Information**: Direct phone numbers and websites
-- **Service Areas**: Coverage zones and availability
+# Preview production build locally
+npm run preview
+```
 
-### How to Use
-1. Enter your **location** (city name or UK postcode)
-2. Click **"Find Tile Stores"** to locate suppliers
-3. Click **"Find Local Tilers"** to find contractors
-4. View **results** with contact details
-5. Get **directions** and make contact
+## 🌐 Deploy
 
-### Benefits
-✅ **Save Time**: Find everything you need in one place
-✅ **Compare Options**: See multiple suppliers/contractors at once
-✅ **Get Contact Info**: Direct phone numbers and addresses
-✅ **Plan Your Project**: Source materials and labor efficiently
-✅ **Free to Use**: Available in the standard version
+### Vercel (Recommended - One Click)
 
-## Getting Started
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/yourusername/tiling-estimator)
 
-### Local Development
+**Or via CLI:**
+```bash
+npm install -g vercel
+vercel
+```
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+### Netlify
 
-2. **Run development server:**
-   ```bash
-   npm run dev
-   ```
+[![Deploy to Netlify](https://www.netlify.com/img/deploy/button.svg)](https://app.netlify.com/start/deploy?repository=https://github.com/yourusername/tiling-estimator)
 
-3. **Build for production:**
-   ```bash
-   npm run build
-   ```
+### Other Platforms
+1. Run `npm run build`
+2. Upload `dist/` folder to your hosting
+3. Configure server to serve `index.html` for all routes
 
-4. **Preview production build:**
-   ```bash
-   npm run preview
-   ```
+## 📖 Documentation
 
-## Deployment
+- **[Quick Start Guide](QUICK-START.md)** - Get started in 5 minutes
+- **[FreeAgent Setup Guide](FREEAGENT-SETUP.md)** - Complete accounting integration
+- **[Local Services Feature](LOCAL-SERVICES.md)** - Find tile stores and tilers
 
-### Deploy to Vercel (Recommended)
+## 🎨 Themes
 
-#### Method 1: Using Vercel CLI
+Four professionally designed themes included:
 
-1. **Install Vercel CLI:**
-   ```bash
-   npm install -g vercel
-   ```
+| Theme | Description | Best For |
+|-------|-------------|----------|
+| **Modern Dark** | Sleek dark gradients with blue accents | Professional contractors |
+| **Classic Blue** | Navy background with gold highlights | Traditional businesses |
+| **Minimal Light** | Clean white with subtle shadows | Modern minimalists |
+| **Sunset** | Warm orange/purple gradients | Creative professionals |
 
-2. **Deploy:**
-   ```bash
-   vercel
-   ```
+## 🛠️ Tech Stack
 
-3. **For production deployment:**
-   ```bash
-   vercel --prod
-   ```
+| Technology | Version | Purpose |
+|-----------|---------|---------|
+| React | 18.3.1 | UI Framework |
+| Vite | 5.4.2 | Build tool & dev server |
+| Tailwind CSS | 3.4.1 | Utility-first styling |
+| Lucide React | Latest | Icon library |
+| PostCSS | 8.4.35 | CSS processing |
 
-#### Method 2: Using Vercel Website
-
-1. Go to [vercel.com](https://vercel.com)
-2. Click "Add New Project"
-3. Import your GitHub repository
-4. Vercel will auto-detect Vite settings
-5. Click "Deploy"
-
-**Build Settings (Auto-detected):**
-- Framework Preset: Vite
-- Build Command: `npm run build`
-- Output Directory: `dist`
-- Install Command: `npm install`
-
-### Deploy to GitHub Pages
-
-1. **Update vite.config.js with your repository name:**
-   ```javascript
-   export default defineConfig({
-     plugins: [react()],
-     base: '/your-repo-name/',  // e.g., '/tiling-estimator/'
-   })
-   ```
-
-2. **Deploy:**
-   ```bash
-   npm run deploy
-   ```
-
-3. **Enable GitHub Pages:**
-   - Go to your repository settings
-   - Navigate to Pages section
-   - Select `gh-pages` branch
-   - Save
-
-Your site will be live at: `https://yourusername.github.io/your-repo-name/`
-
-### Deploy to Netlify
-
-1. Go to [netlify.com](https://netlify.com)
-2. Click "Add new site" → "Import an existing project"
-3. Connect to your Git provider
-4. Configure build settings:
-   - Build command: `npm run build`
-   - Publish directory: `dist`
-5. Click "Deploy site"
-
-## Project Structure
+## 📁 Project Structure
 
 ```
 tiling-estimator/
 ├── src/
-│   ├── App.jsx          # Main application component
-│   └── main.jsx         # React entry point
-├── index.html           # HTML template
-├── package.json         # Dependencies and scripts
-├── vite.config.js       # Vite configuration
-└── README.md           # This file
+│   ├── App.jsx              # Main application component (3500+ lines)
+│   ├── main.jsx             # React entry point
+│   └── index.css            # Global styles & Tailwind imports
+├── public/                  # Static assets
+├── docs/                    # Documentation
+│   ├── QUICK-START.md       # Quick start guide
+│   ├── FREEAGENT-SETUP.md   # FreeAgent integration guide
+│   └── LOCAL-SERVICES.md    # Local services feature guide
+├── package.json             # Dependencies & scripts
+├── vite.config.js           # Vite configuration
+├── tailwind.config.js       # Tailwind CSS configuration
+├── postcss.config.js        # PostCSS configuration
+├── vercel.json              # Vercel deployment settings
+├── .gitignore               # Git ignore rules
+└── README.md                # This file
 ```
 
-## How to Use
+## 🎯 Use Cases
 
-### Basic Mode
+### For Professional Tilers
+- Calculate materials for jobs
+- Generate branded quotes
+- Export to accounting software
+- Track costs and pricing
+- Find local suppliers
 
-1. **Add Rooms**: Click "+ Add Room" to create a new room
-2. **Name Your Room**: Click on the room name to edit it
-3. **Select Surface Type**: Choose "Floor" or "Wall" for the room
-4. **Select Material Options**: 
-   - **For Floors**: Cement board, Ditra mat, floor tanking
-   - **For Walls**: Wall tanking, tile trim, wall primer
-5. **Configure Tile Settings**: Select tile size and wastage percentage
-6. **Add Areas**: Click "+ Add Area" within a room to add separate areas
-7. **Input Dimensions**: Enter length and width in meters for each area
-8. **View Results**: See real-time calculations for:
-   - Net area per room
-   - Total area including wastage
-   - Number of tiles needed
-   - Surface-specific materials
-   - Grand totals across all rooms
+### For DIY Enthusiasts
+- Calculate exact material quantities
+- Avoid over/under-ordering
+- Find local tile stores
+- Get professional estimates
+- Learn tiling requirements
 
-### Professional Mode
+### For Contractors
+- Quote multiple rooms
+- Apply consistent pricing
+- Professional client presentation
+- VAT-compliant invoicing
+- Business branding
 
-Click "Show Professional Mode" to access advanced features:
+## 🔧 Key Features Explained
 
-1. **Customer Information**
-   - Enter customer name, phone, email, and address
-   - Information automatically included in exports
+### Material Calculations
 
-2. **Materials Required**
-   - View automatic calculations for standard materials:
-     - Adhesive (3.5 kg/m²)
-     - Grout (0.5 kg/m²)
-     - Primer (0.15 L/m²)
-     - Sealer (0.1 L/m²)
-   - View surface-specific materials when selected:
-     - **Floor**: Cement board, Ditra mat, floor tanking
-     - **Wall**: Wall tanking, tile trim, wall primer
+**Adhesive (Based on Trowel Size):**
+- 6mm Notched: 2.5 kg/m² (small tiles up to 300mm)
+- 8mm Notched: 3.5 kg/m² (medium tiles 300-450mm)
+- 10mm Notched: 4.5 kg/m² (large tiles 450-600mm)
+- 12mm Notched: 5.5 kg/m² (extra large tiles 600mm+)
 
-3. **Complete Wall Calculation** (for walls)
-   - Switch to "Complete Walls" mode
-   - Enter room length and width
-   - Set ceiling height (default 2.4m)
-   - System calculates: 2 × Height × (Length + Width)
-   - Perfect for tiling entire room walls
+**Grout (Based on Tile Size & Joint Width):**
+- Calculated using: (Length + Width) / (Length × Width) × Joint Width × Depth × Density
+- Precise formula accounts for tile dimensions and joint spacing
+- Results shown in 2.5kg bag quantities
 
-4. **Pricing & Costs**
-   - Enter prices for tiles, labour, and all materials
-   - Surface-specific material pricing appears automatically when selected
-   - Set your markup percentage
-   - View complete cost breakdown with subtotal and total
+**Other Materials:**
+- Primer: 0.15 L/m²
+- Sealer: 0.1 L/m²
+- Cement Board: 1 board/m² (600×1200mm)
+- Ditra Mat: 1.1 m²/m² (10% wastage)
+- Floor Tanking: 0.5 L/m²
+- Wall Tanking: 0.4 L/m²
+- Tile Trim: 4 m/m²
+- Wall Primer: 0.2 L/m²
 
-4. **Export Options**
-   - **WhatsApp**: Share formatted quote via WhatsApp
-   - **Download**: Save detailed estimate as text file
-   - Both exports include all room details, materials, and costs
+### FreeAgent Integration
 
-## Calculations
+Automatically creates invoices/quotes in FreeAgent with:
+- All line items (labour, materials, day rate)
+- Customer details linked
+- VAT calculated and applied
+- Payment terms (30 days default)
+- Project reference with room count and area
 
-### Area & Tile Calculations
-- **Net Area**: Sum of all area dimensions (length × width)
-- **Wall Area (Complete Walls Mode)**: 2 × Height × (Length + Width)
-- **Wastage Calculation**: Net area × (1 + wastage%)
-- **Tiles Required**: Rounded up (Total area with wastage ÷ single tile area)
+See [FREEAGENT-SETUP.md](FREEAGENT-SETUP.md) for full setup instructions.
 
-### Material Requirements (Industry Standard Rates)
-**Standard Materials (All Surfaces):**
-- **Adhesive**: 3.5 kg per m²
-- **Grout**: 0.5 kg per m²
-- **Primer**: 0.15 L per m²
-- **Sealer**: 0.1 L per m²
+### Local Services Search
 
-**Floor-Specific Materials:**
-- **Cement Board**: 1 board per m² (600x1200mm boards)
-- **Ditra Mat**: 1.1 m² per m² (includes 10% wastage)
-- **Floor Tanking**: 0.5 L per m²
+Find nearby businesses:
+- **Tile Stores**: Major chains (Topps Tiles, CTD, Tile Giant) and independent shops
+- **Professional Tilers**: Rated contractors with reviews and contact details
+- **Search by**: Postcode, city name, or area
+- **Results include**: Phone, address, ratings, directions
 
-**Wall-Specific Materials:**
-- **Wall Tanking**: 0.4 L per m²
-- **Tile Trim**: 4 linear meters per m² (approximate)
-- **Wall Primer**: 0.2 L per m²
+## 🌍 Browser Support
 
-### Cost Calculations
-- **Line Items**: Tiles, Labour, Adhesive, Grout, Primer, Sealer
-- **Subtotal**: Sum of all line items
-- **Markup**: Subtotal × (markup % / 100)
-- **Total**: Subtotal + Markup
+| Browser | Supported Versions |
+|---------|-------------------|
+| Chrome | Last 2 versions ✅ |
+| Firefox | Last 2 versions ✅ |
+| Safari | Last 2 versions ✅ |
+| Edge | Last 2 versions ✅ |
+| Mobile Safari | iOS 12+ ✅ |
+| Chrome Mobile | Android 8+ ✅ |
 
-## Browser Support
+## 🤝 Contributing
 
-Works on all modern browsers:
-- Chrome/Edge (latest)
-- Firefox (latest)
-- Safari (latest)
-- Mobile browsers (iOS Safari, Chrome Mobile)
+Contributions are welcome! Here's how:
 
-## Tech Stack
+1. **Fork** the repository
+2. **Create** a feature branch: `git checkout -b feature/amazing-feature`
+3. **Commit** your changes: `git commit -m 'Add amazing feature'`
+4. **Push** to the branch: `git push origin feature/amazing-feature`
+5. **Open** a Pull Request
 
-- **React 18** - UI framework
-- **Vite 4** - Build tool and dev server
-- **Tailwind CSS** - Utility-first styling
-- **Lucide React** - Icon library
-- **PostCSS & Autoprefixer** - CSS processing
+### Development Guidelines
 
-## License
+- Follow existing code style
+- Test on multiple browsers
+- Update documentation if needed
+- Add comments for complex logic
+- Keep commits atomic and descriptive
 
-This project is created for professional tiling estimation use.
+## 🐛 Bug Reports
 
-## Support
+Found a bug? Please [open an issue](https://github.com/yourusername/tiling-estimator/issues) with:
 
-For issues or feature requests, please create an issue in the repository.
+- **Bug description** - Clear and concise
+- **Steps to reproduce** - Numbered list
+- **Expected behavior** - What should happen
+- **Actual behavior** - What actually happens
+- **Screenshots** - If applicable
+- **Environment** - Browser, OS, device
+
+## 💡 Feature Requests
+
+Have an idea? [Open an issue](https://github.com/yourusername/tiling-estimator/issues) with:
+
+- **Feature description** - What you want
+- **Use case** - Why it's useful
+- **Implementation ideas** - How it might work
+- **Alternatives considered** - Other approaches
+
+## 📄 License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+### MIT License Summary
+
+✅ Commercial use  
+✅ Modification  
+✅ Distribution  
+✅ Private use  
+❌ Liability  
+❌ Warranty  
+
+## 👨‍💻 Author
+
+**Your Name**
+- GitHub: [@yourusername](https://github.com/yourusername)
+- Website: [yourwebsite.com](https://yourwebsite.com)
+- Email: your.email@example.com
+
+## 🙏 Acknowledgments
+
+- **Icons**: [Lucide Icons](https://lucide.dev/)
+- **Build Tool**: [Vite](https://vitejs.dev/)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
+- **React**: [React](https://react.dev/)
+- **Inspiration**: Professional tilers and contractors worldwide
+
+## 📊 Stats
+
+![GitHub stars](https://img.shields.io/github/stars/yourusername/tiling-estimator?style=social)
+![GitHub forks](https://img.shields.io/github/forks/yourusername/tiling-estimator?style=social)
+![GitHub watchers](https://img.shields.io/github/watchers/yourusername/tiling-estimator?style=social)
+
+## 🗺️ Roadmap
+
+### Version 2.0 (Planned)
+- [ ] Cloud sync for settings across devices
+- [ ] Quote history and database
+- [ ] Customer database with project history
+- [ ] Team collaboration features
+- [ ] Quote templates library
+- [ ] Email quote sending
+- [ ] PDF export with custom branding
+
+### Version 3.0 (Future)
+- [ ] Mobile app (iOS/Android)
+- [ ] Multi-language support
+- [ ] Advanced reporting and analytics
+- [ ] Integration with more accounting platforms
+- [ ] AI-powered material recommendations
+- [ ] 3D room visualization
+
+## 📞 Support
+
+Need help? Reach out:
+
+- 📧 **Email**: support@example.com
+- 💬 **Discord**: [Join our community](https://discord.gg/example)
+- 🐦 **Twitter**: [@tilingestimator](https://twitter.com/example)
+- 📚 **Docs**: [Full documentation](https://docs.example.com)
+
+## ⭐ Show Your Support
+
+If this project helped you, please consider:
+- ⭐ **Starring** the repository
+- 🐛 **Reporting** bugs
+- 💡 **Suggesting** features
+- 🤝 **Contributing** code
+- 📢 **Sharing** with others
+
+## 📈 Project Stats
+
+- **Total Lines of Code**: ~3,500+
+- **Components**: 1 main component with multiple sections
+- **Themes**: 4 professional themes
+- **Material Types**: 12+ different materials
+- **Export Formats**: 3 (WhatsApp, File, FreeAgent)
+- **Documentation**: 4 comprehensive guides
 
 ---
 
-Built with ❤️ for professional tilers and contractors
+<div align="center">
+
+**Made with ❤️ for the tiling industry**
+
+[Report Bug](https://github.com/yourusername/tiling-estimator/issues) · [Request Feature](https://github.com/yourusername/tiling-estimator/issues) · [Documentation](docs/)
+
+</div>

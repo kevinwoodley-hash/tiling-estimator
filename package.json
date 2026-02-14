@@ -1,8 +1,32 @@
 {
-  "name": "tiling-estimator",
+  "name": "professional-tiling-estimator",
   "version": "1.0.0",
-  "private": true,
-  "description": "Multi-room tiling estimator with area breakdowns and professional calculations",
+  "description": "Professional tiling calculator and business management tool - calculate materials, generate quotes, and manage your tiling business",
+  "author": "Your Name",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/tiling-estimator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/tiling-estimator/issues"
+  },
+  "homepage": "https://github.com/yourusername/tiling-estimator#readme",
+  "keywords": [
+    "tiling",
+    "calculator",
+    "estimator",
+    "construction",
+    "contractor",
+    "tiles",
+    "grout",
+    "adhesive",
+    "business-management",
+    "quote-generator",
+    "freeagent",
+    "react",
+    "vite"
+  ],
   "type": "module",
   "scripts": {
     "dev": "vite",
