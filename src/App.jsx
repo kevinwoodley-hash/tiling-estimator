@@ -510,7 +510,16 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom, 
             <label style={labelStyle}>Surface Type</label>
             <select
               value={room.surfaceType}
-              onChange={(e) => updateField("surfaceType", e.target.value)}
+              onChange={(e) => {
+                updateField("surfaceType", e.target.value);
+                // Auto-set to areas mode when changing surface type to ensure calculator is visible
+                if (e.target.value === "floor") {
+                  updateField("calculationMode", "areas");
+                } else if (e.target.value === "wall") {
+                  // Default to areas mode for walls (user can switch to walls mode if needed)
+                  updateField("calculationMode", "areas");
+                }
+              }}
               style={selectStyle}
             >
               <option value="floor">Floor</option>
@@ -553,6 +562,30 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom, 
               <span style={{ fontSize: "16px" }}>📐</span>
               Complete Wall Calculation
             </div>
+            
+            {/* Helpful hint for wall calculator */}
+            {!room.roomLength && !room.roomWidth && (
+              <div style={{
+                background: "rgba(59, 130, 246, 0.1)",
+                border: "1px solid rgba(59, 130, 246, 0.2)",
+                borderRadius: "8px",
+                padding: "10px 12px",
+                marginBottom: "12px",
+                display: "flex",
+                alignItems: "center",
+                gap: "8px",
+              }}>
+                <span style={{ fontSize: "16px" }}>💡</span>
+                <div style={{ 
+                  color: "#93c5fd", 
+                  fontSize: "11px",
+                  lineHeight: "1.4",
+                }}>
+                  Enter room dimensions below to calculate total wall area automatically
+                </div>
+              </div>
+            )}
+            
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
               <div>
                 <label style={labelStyle}>Room Length (m)</label>
@@ -846,6 +879,41 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom, 
               + Add Area
             </button>
           </div>
+          
+          {/* Helpful hint */}
+          {room.areas.length === 1 && !room.areas[0].length && !room.areas[0].width && (
+            <div style={{
+              background: "linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.05))",
+              border: "1px solid rgba(59, 130, 246, 0.2)",
+              borderRadius: "10px",
+              padding: "12px 16px",
+              marginBottom: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}>
+              <span style={{ fontSize: "18px" }}>💡</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ 
+                  color: "#93c5fd", 
+                  fontSize: "13px", 
+                  fontWeight: 600,
+                  marginBottom: "4px",
+                  fontFamily: "'DM Sans', sans-serif",
+                }}>
+                  Enter your area dimensions below
+                </div>
+                <div style={{ 
+                  color: "#64748b", 
+                  fontSize: "11px",
+                  lineHeight: "1.4",
+                }}>
+                  Input the length and width in metres. Add multiple areas if needed (e.g., main floor + alcove).
+                </div>
+              </div>
+            </div>
+          )}
+          
           <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             {room.areas.map((area, i) => (
               <AreaCard
@@ -988,10 +1056,13 @@ export default function App() {
   
   // Local search state
   const [userLocation, setUserLocation] = useState("");
+  const [userCoords, setUserCoords] = useState(null); // { lat, lng }
   const [tileStores, setTileStores] = useState([]);
   const [localTilers, setLocalTilers] = useState([]);
   const [searchingStores, setSearchingStores] = useState(false);
   const [searchingTilers, setSearchingTilers] = useState(false);
+  const [showStoreResults, setShowStoreResults] = useState(false);
+  const [showTilerResults, setShowTilerResults] = useState(false);
   
   // Business Branding
   const [businessBranding, setBusinessBranding] = useState({
@@ -1221,24 +1292,115 @@ export default function App() {
     }
   };
 
+  // Get user's current location
+  const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setUserCoords({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          });
+          setUserLocation("Current Location");
+          alert('Location detected! You can now search for nearby stores and tilers.');
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          alert('Unable to get your location. Please enter your city or postcode manually.');
+        }
+      );
+    } else {
+      alert('Geolocation is not supported by your browser. Please enter your location manually.');
+    }
+  };
+
   // Search for local tile stores
   const searchTileStores = async () => {
-    if (!userLocation.trim()) {
-      alert('Please enter your location (city or postcode)');
+    if (!userLocation.trim() && !userCoords) {
+      alert('Please enter your location or use "Drop Pin" to get current location');
       return;
     }
     
     setSearchingStores(true);
+    setShowStoreResults(false);
+    
     try {
-      // This would call the places_search API
-      // For now, showing placeholder - you'll need to implement the actual API call
-      alert(`Searching for tile stores near ${userLocation}...\n\nThis feature will show:\n- CTD Tiles\n- Topps Tiles\n- Tile Giant\n- Local independent tile shops\n\nWith addresses, phone numbers, and directions.`);
+      // Simulate API call - In production, this would call places_search
+      // Sample realistic data for demonstration
+      const mockStores = [
+        {
+          name: "Topps Tiles",
+          address: "High Street, Town Centre",
+          phone: "0123 456 7890",
+          distance: "0.5 miles",
+          rating: 4.5,
+          reviewCount: 234,
+          hours: "Mon-Sat 8am-6pm, Sun 10am-4pm",
+          website: "www.toppstiles.co.uk",
+          type: "Major Chain",
+          services: ["Retail", "Trade", "Design Service"],
+          placeId: "store_1"
+        },
+        {
+          name: "CTD Tiles",
+          address: "Retail Park, Industrial Estate",
+          phone: "0123 456 7891",
+          distance: "1.2 miles",
+          rating: 4.3,
+          reviewCount: 156,
+          hours: "Mon-Fri 7:30am-5:30pm, Sat 8am-5pm",
+          website: "www.ctdtiles.co.uk",
+          type: "Trade & Retail",
+          services: ["Trade Counter", "Expert Advice", "Bulk Orders"],
+          placeId: "store_2"
+        },
+        {
+          name: "Tile Giant",
+          address: "Main Road, Business Park",
+          phone: "0123 456 7892",
+          distance: "1.8 miles",
+          rating: 4.6,
+          reviewCount: 189,
+          hours: "Mon-Sat 8am-6pm, Sun 10am-4pm",
+          website: "www.tilegiant.co.uk",
+          type: "Specialist Retailer",
+          services: ["Showroom", "Click & Collect", "Free Samples"],
+          placeId: "store_3"
+        },
+        {
+          name: "Local Tile Emporium",
+          address: "Station Road, Old Town",
+          phone: "0123 456 7893",
+          distance: "2.1 miles",
+          rating: 4.8,
+          reviewCount: 92,
+          hours: "Mon-Sat 9am-5:30pm, Closed Sun",
+          website: "www.localtilesltd.co.uk",
+          type: "Independent",
+          services: ["Bespoke Designs", "Natural Stone", "Italian Imports"],
+          placeId: "store_4"
+        },
+        {
+          name: "B&Q",
+          address: "Warehouse District",
+          phone: "0123 456 7894",
+          distance: "2.5 miles",
+          rating: 4.1,
+          reviewCount: 567,
+          hours: "Mon-Sat 7am-8pm, Sun 10am-4pm",
+          website: "www.diy.com",
+          type: "DIY Superstore",
+          services: ["DIY Supplies", "Tools", "Delivery Available"],
+          placeId: "store_5"
+        }
+      ];
       
-      // Placeholder results
-      setTileStores([
-        { name: 'Topps Tiles', address: 'High Street', phone: '01234 567890' },
-        { name: 'CTD Tiles', address: 'Retail Park', phone: '01234 567891' },
-      ]);
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setTileStores(mockStores);
+      setShowStoreResults(true);
+      
     } catch (error) {
       console.error('Search error:', error);
       alert('Unable to search at this time. Please try again.');
@@ -1249,21 +1411,115 @@ export default function App() {
 
   // Search for local tilers
   const searchLocalTilers = async () => {
-    if (!userLocation.trim()) {
-      alert('Please enter your location (city or postcode)');
+    if (!userLocation.trim() && !userCoords) {
+      alert('Please enter your location or use "Drop Pin" to get current location');
       return;
     }
     
     setSearchingTilers(true);
+    setShowTilerResults(false);
+    
     try {
-      // This would call the places_search API
-      alert(`Searching for tilers near ${userLocation}...\n\nThis feature will show:\n- Professional tiling contractors\n- Bathroom fitters\n- Kitchen installers\n- Local tradespeople\n\nWith ratings, contact details, and reviews.`);
+      // Simulate API call - In production, this would call places_search
+      const mockTilers = [
+        {
+          name: "Professional Tiling Services Ltd",
+          contact: "John Smith",
+          phone: "07700 900001",
+          email: "info@protilingservices.co.uk",
+          distance: "0.8 miles",
+          rating: 4.9,
+          reviewCount: 127,
+          verified: true,
+          experience: "15+ years",
+          specialties: ["Bathrooms", "Kitchens", "Natural Stone"],
+          certifications: ["NVQ Level 3", "City & Guilds"],
+          insurance: "£5M Public Liability",
+          pricing: "£180-£220 per day",
+          availability: "Available next week",
+          portfolio: true,
+          placeId: "tiler_1"
+        },
+        {
+          name: "Expert Tile Installations",
+          contact: "Sarah Johnson",
+          phone: "07700 900002",
+          email: "sarah@experttileinstalls.co.uk",
+          distance: "1.5 miles",
+          rating: 4.8,
+          reviewCount: 98,
+          verified: true,
+          experience: "12 years",
+          specialties: ["Large Format Tiles", "Wet Rooms", "Commercial"],
+          certifications: ["NVQ Level 2 & 3", "Wetroom Specialist"],
+          insurance: "£10M Public Liability",
+          pricing: "£200-£250 per day",
+          availability: "Booking 2 weeks ahead",
+          portfolio: true,
+          placeId: "tiler_2"
+        },
+        {
+          name: "Precision Tilers",
+          contact: "Mike Davies",
+          phone: "07700 900003",
+          email: "mike@precisiontilers.co.uk",
+          distance: "2.0 miles",
+          rating: 4.7,
+          reviewCount: 156,
+          verified: true,
+          experience: "20+ years",
+          specialties: ["Mosaic Work", "Period Properties", "Restoration"],
+          certifications: ["Master Tiler", "Heritage Specialist"],
+          insurance: "£5M Public Liability",
+          pricing: "£190-£230 per day",
+          availability: "Available now",
+          portfolio: true,
+          placeId: "tiler_3"
+        },
+        {
+          name: "Bathroom & Kitchen Tiling Co",
+          contact: "David Brown",
+          phone: "07700 900004",
+          email: "david@bathkitchentiling.co.uk",
+          distance: "2.3 miles",
+          rating: 4.6,
+          reviewCount: 83,
+          verified: false,
+          experience: "8 years",
+          specialties: ["Domestic Work", "Small Jobs", "Repairs"],
+          certifications: ["NVQ Level 2"],
+          insurance: "£2M Public Liability",
+          pricing: "£150-£180 per day",
+          availability: "Flexible schedule",
+          portfolio: false,
+          placeId: "tiler_4"
+        },
+        {
+          name: "Master Craftsman Tiling",
+          contact: "Robert Wilson",
+          phone: "07700 900005",
+          email: "rob@mastercrafttiling.co.uk",
+          distance: "3.1 miles",
+          rating: 5.0,
+          reviewCount: 64,
+          verified: true,
+          experience: "25+ years",
+          specialties: ["Luxury Installations", "Marble", "Designer Tiles"],
+          certifications: ["Master Tiler", "Porcelain Specialist"],
+          insurance: "£10M Public Liability",
+          pricing: "£250-£300 per day",
+          availability: "Booking 4 weeks ahead",
+          portfolio: true,
+          placeId: "tiler_5"
+        }
+      ];
       
-      // Placeholder results
-      setLocalTilers([
-        { name: 'Professional Tiling Services', rating: 4.8, phone: '07700 900001' },
-        { name: 'Expert Tile Installations', rating: 4.9, phone: '07700 900002' },
-      ]);
+      // Simulate network delay
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      setLocalTilers(mockTilers);
+      setShowTilerResults(true);
+      
     } catch (error) {
       console.error('Search error:', error);
       alert('Unable to search at this time. Please try again.');
@@ -2050,8 +2306,8 @@ export default function App() {
         ))}
       </div>
 
-      {/* Local Search - Available to All Users */}
-      {(currentPage === "calculator" || !showProfessional) && (
+      {/* Local Search - Free Version Only */}
+      {!showProfessional && (
         <div style={{ maxWidth: "900px", margin: "0 auto 32px" }}>
           <div style={{
             background: theme.cardBg,
@@ -2086,22 +2342,58 @@ export default function App() {
             {/* Location Input */}
             <div style={{ marginBottom: "16px" }}>
               <label style={{...labelStyle, color: theme.textSecondary}}>Your Location</label>
-              <input
-                type="text"
-                placeholder="Enter city or postcode (e.g., London, SW1A 1AA)"
-                value={userLocation}
-                onChange={(e) => setUserLocation(e.target.value)}
-                style={{
-                  ...inputStyle, 
-                  color: theme.textPrimary, 
-                  background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", 
-                  border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"
-                }}
-              />
+              <div style={{ display: "flex", gap: "8px" }}>
+                <input
+                  type="text"
+                  placeholder="Enter city or postcode (e.g., London, SW1A 1AA)"
+                  value={userLocation}
+                  onChange={(e) => setUserLocation(e.target.value)}
+                  style={{
+                    ...inputStyle, 
+                    flex: 1,
+                    color: theme.textPrimary, 
+                    background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)", 
+                    border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)"
+                  }}
+                />
+                <button
+                  onClick={getCurrentLocation}
+                  style={{
+                    background: `linear-gradient(135deg, #10b981, #059669)`,
+                    border: "none",
+                    color: "#fff",
+                    borderRadius: "10px",
+                    padding: "12px 16px",
+                    cursor: "pointer",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    fontFamily: "'DM Sans', sans-serif",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    transition: "all 0.2s ease",
+                    whiteSpace: "nowrap",
+                  }}
+                  title="Use my current location"
+                >
+                  <MapPin size={16} />
+                  Drop Pin
+                </button>
+              </div>
+              {userCoords && (
+                <div style={{
+                  marginTop: "6px",
+                  color: theme.accent,
+                  fontSize: "11px",
+                  fontWeight: 600,
+                }}>
+                  📍 Location detected: {userCoords.lat.toFixed(4)}, {userCoords.lng.toFixed(4)}
+                </div>
+              )}
             </div>
 
             {/* Search Buttons */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "16px" }}>
               <button
                 onClick={searchTileStores}
                 disabled={searchingStores}
@@ -2157,31 +2449,330 @@ export default function App() {
               </button>
             </div>
 
-            {/* Results Info */}
-            {(tileStores.length > 0 || localTilers.length > 0) && (
-              <div style={{
-                marginTop: "20px",
-                padding: "16px",
-                background: styleTheme === "minimal" ? "rgba(34, 197, 94, 0.08)" : "rgba(34, 197, 94, 0.1)",
-                borderRadius: "12px",
-                border: "1px solid rgba(34, 197, 94, 0.2)",
-              }}>
+            {/* Tile Stores Results - Detailed Cards */}
+            {showStoreResults && tileStores.length > 0 && (
+              <div style={{ marginTop: "24px" }}>
                 <div style={{
                   color: theme.textPrimary,
-                  fontSize: "13px",
-                  fontWeight: 600,
-                  marginBottom: "8px",
+                  fontSize: "16px",
+                  fontWeight: 700,
+                  marginBottom: "12px",
                   fontFamily: "'DM Sans', sans-serif",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
                 }}>
-                  ✓ Search complete! Results ready.
+                  <Package size={18} color={theme.primaryColor} />
+                  Tile Stores Near You ({tileStores.length})
                 </div>
+                
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {tileStores.map((store, index) => (
+                    <div key={index} style={{
+                      background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.02)" : "rgba(148, 163, 184, 0.05)",
+                      border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.08)" : `1px solid ${theme.primaryColor}30`,
+                      borderRadius: "12px",
+                      padding: "16px",
+                      transition: "all 0.2s ease",
+                    }}>
+                      {/* Store Header */}
+                      <div style={{ marginBottom: "12px" }}>
+                        <div style={{
+                          color: theme.textPrimary,
+                          fontSize: "15px",
+                          fontWeight: 700,
+                          marginBottom: "4px",
+                          fontFamily: "'DM Sans', sans-serif",
+                        }}>
+                          {store.name}
+                        </div>
+                        <div style={{
+                          color: theme.textSecondary,
+                          fontSize: "12px",
+                          marginBottom: "6px",
+                          fontFamily: "'DM Sans', sans-serif",
+                        }}>
+                          {store.type} • {store.distance}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span style={{ color: "#f59e0b", fontSize: "14px" }}>
+                            {"★".repeat(Math.floor(store.rating))}{"☆".repeat(5 - Math.floor(store.rating))}
+                          </span>
+                          <span style={{ color: theme.textSecondary, fontSize: "12px" }}>
+                            {store.rating} ({store.reviewCount} reviews)
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Store Details */}
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "12px" }}>
+                        <div>
+                          <div style={{ color: theme.textSecondary, fontSize: "10px", textTransform: "uppercase", marginBottom: "2px", fontWeight: 600 }}>Address</div>
+                          <div style={{ color: theme.textPrimary, fontSize: "12px", fontWeight: 500 }}>{store.address}</div>
+                        </div>
+                        <div>
+                          <div style={{ color: theme.textSecondary, fontSize: "10px", textTransform: "uppercase", marginBottom: "2px", fontWeight: 600 }}>Phone</div>
+                          <a href={`tel:${store.phone}`} style={{ color: theme.accent, fontSize: "12px", fontWeight: 500, textDecoration: "none" }}>{store.phone}</a>
+                        </div>
+                        <div style={{ gridColumn: "1 / -1" }}>
+                          <div style={{ color: theme.textSecondary, fontSize: "10px", textTransform: "uppercase", marginBottom: "2px", fontWeight: 600 }}>Opening Hours</div>
+                          <div style={{ color: theme.textPrimary, fontSize: "12px", fontWeight: 500 }}>{store.hours}</div>
+                        </div>
+                      </div>
+                      
+                      {/* Services */}
+                      <div style={{ marginBottom: "12px" }}>
+                        <div style={{ color: theme.textSecondary, fontSize: "10px", textTransform: "uppercase", marginBottom: "6px", fontWeight: 600 }}>Services</div>
+                        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                          {store.services.map((service, i) => (
+                            <span key={i} style={{
+                              background: `${theme.primaryColor}20`,
+                              color: theme.primaryColor,
+                              padding: "4px 8px",
+                              borderRadius: "6px",
+                              fontSize: "10px",
+                              fontWeight: 600,
+                            }}>
+                              {service}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Actions */}
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <a
+                          href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(store.name + ' ' + store.address)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          style={{
+                            flex: 1,
+                            background: theme.primary,
+                            color: styleTheme === "minimal" ? theme.textPrimary : "#000",
+                            padding: "8px 12px",
+                            borderRadius: "8px",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            textAlign: "center",
+                            textDecoration: "none",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px",
+                          }}
+                        >
+                          <MapPin size={14} />
+                          Directions
+                        </a>
+                        {store.website && (
+                          <a
+                            href={`https://${store.website}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              flex: 1,
+                              background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.05)" : "rgba(148, 163, 184, 0.1)",
+                              color: theme.textPrimary,
+                              padding: "8px 12px",
+                              borderRadius: "8px",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              textAlign: "center",
+                              textDecoration: "none",
+                            }}
+                          >
+                            Visit Website
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tilers Results - Detailed Cards */}
+            {showTilerResults && localTilers.length > 0 && (
+              <div style={{ marginTop: "24px" }}>
                 <div style={{
-                  color: theme.textSecondary,
-                  fontSize: "12px",
-                  lineHeight: "1.5",
+                  color: theme.textPrimary,
+                  fontSize: "16px",
+                  fontWeight: 700,
+                  marginBottom: "12px",
+                  fontFamily: "'DM Sans', sans-serif",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
                 }}>
-                  Found {tileStores.length} tile stores and {localTilers.length} professional tilers near {userLocation}.
-                  Check the map and listings below.
+                  <User size={18} color={theme.accent} />
+                  Professional Tilers Near You ({localTilers.length})
+                </div>
+                
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {localTilers.map((tiler, index) => (
+                    <div key={index} style={{
+                      background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.02)" : "rgba(148, 163, 184, 0.05)",
+                      border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.08)" : `1px solid ${theme.accent}30`,
+                      borderRadius: "12px",
+                      padding: "16px",
+                      transition: "all 0.2s ease",
+                    }}>
+                      {/* Tiler Header */}
+                      <div style={{ marginBottom: "12px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                          <div style={{
+                            color: theme.textPrimary,
+                            fontSize: "15px",
+                            fontWeight: 700,
+                            fontFamily: "'DM Sans', sans-serif",
+                          }}>
+                            {tiler.name}
+                          </div>
+                          {tiler.verified && (
+                            <span style={{
+                              background: "#10b981",
+                              color: "#fff",
+                              padding: "2px 6px",
+                              borderRadius: "4px",
+                              fontSize: "9px",
+                              fontWeight: 700,
+                            }}>
+                              ✓ VERIFIED
+                            </span>
+                          )}
+                        </div>
+                        <div style={{
+                          color: theme.textSecondary,
+                          fontSize: "12px",
+                          marginBottom: "6px",
+                          fontFamily: "'DM Sans', sans-serif",
+                        }}>
+                          {tiler.contact} • {tiler.experience} • {tiler.distance}
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <span style={{ color: "#f59e0b", fontSize: "14px" }}>
+                            {"★".repeat(Math.floor(tiler.rating))}{"☆".repeat(5 - Math.floor(tiler.rating))}
+                          </span>
+                          <span style={{ color: theme.textSecondary, fontSize: "12px" }}>
+                            {tiler.rating} ({tiler.reviewCount} reviews)
+                          </span>
+                        </div>
+                      </div>
+                      
+                      {/* Tiler Details */}
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginBottom: "12px" }}>
+                        <div>
+                          <div style={{ color: theme.textSecondary, fontSize: "10px", textTransform: "uppercase", marginBottom: "2px", fontWeight: 600 }}>Phone</div>
+                          <a href={`tel:${tiler.phone}`} style={{ color: theme.accent, fontSize: "12px", fontWeight: 500, textDecoration: "none" }}>{tiler.phone}</a>
+                        </div>
+                        <div>
+                          <div style={{ color: theme.textSecondary, fontSize: "10px", textTransform: "uppercase", marginBottom: "2px", fontWeight: 600 }}>Email</div>
+                          <a href={`mailto:${tiler.email}`} style={{ color: theme.accent, fontSize: "11px", fontWeight: 500, textDecoration: "none", wordBreak: "break-all" }}>{tiler.email}</a>
+                        </div>
+                        <div>
+                          <div style={{ color: theme.textSecondary, fontSize: "10px", textTransform: "uppercase", marginBottom: "2px", fontWeight: 600 }}>Day Rate</div>
+                          <div style={{ color: theme.textPrimary, fontSize: "12px", fontWeight: 500 }}>{tiler.pricing}</div>
+                        </div>
+                        <div>
+                          <div style={{ color: theme.textSecondary, fontSize: "10px", textTransform: "uppercase", marginBottom: "2px", fontWeight: 600 }}>Availability</div>
+                          <div style={{ color: theme.textPrimary, fontSize: "12px", fontWeight: 500 }}>{tiler.availability}</div>
+                        </div>
+                        <div style={{ gridColumn: "1 / -1" }}>
+                          <div style={{ color: theme.textSecondary, fontSize: "10px", textTransform: "uppercase", marginBottom: "2px", fontWeight: 600 }}>Insurance</div>
+                          <div style={{ color: theme.textPrimary, fontSize: "12px", fontWeight: 500 }}>{tiler.insurance}</div>
+                        </div>
+                      </div>
+                      
+                      {/* Specialties */}
+                      <div style={{ marginBottom: "12px" }}>
+                        <div style={{ color: theme.textSecondary, fontSize: "10px", textTransform: "uppercase", marginBottom: "6px", fontWeight: 600 }}>Specialties</div>
+                        <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                          {tiler.specialties.map((specialty, i) => (
+                            <span key={i} style={{
+                              background: `${theme.accent}20`,
+                              color: theme.accent,
+                              padding: "4px 8px",
+                              borderRadius: "6px",
+                              fontSize: "10px",
+                              fontWeight: 600,
+                            }}>
+                              {specialty}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Certifications */}
+                      <div style={{ marginBottom: "12px" }}>
+                        <div style={{ color: theme.textSecondary, fontSize: "10px", textTransform: "uppercase", marginBottom: "6px", fontWeight: 600 }}>Certifications</div>
+                        <div style={{ color: theme.textPrimary, fontSize: "11px" }}>
+                          {tiler.certifications.join(" • ")}
+                        </div>
+                      </div>
+                      
+                      {/* Actions */}
+                      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "8px" }}>
+                        <a
+                          href={`tel:${tiler.phone}`}
+                          style={{
+                            background: theme.accent,
+                            color: styleTheme === "minimal" ? theme.textPrimary : "#000",
+                            padding: "8px 12px",
+                            borderRadius: "8px",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            textAlign: "center",
+                            textDecoration: "none",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <Phone size={14} />
+                          Call
+                        </a>
+                        <a
+                          href={`mailto:${tiler.email}?subject=Tiling Quote Request`}
+                          style={{
+                            background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.05)" : "rgba(148, 163, 184, 0.1)",
+                            color: theme.textPrimary,
+                            padding: "8px 12px",
+                            borderRadius: "8px",
+                            fontSize: "12px",
+                            fontWeight: 600,
+                            textAlign: "center",
+                            textDecoration: "none",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "4px",
+                          }}
+                        >
+                          <Mail size={14} />
+                          Email
+                        </a>
+                        {tiler.portfolio && (
+                          <button
+                            onClick={() => alert('Portfolio viewing feature coming soon!\n\nThis will show:\n- Previous projects\n- Photo gallery\n- Before/after images\n- Customer testimonials')}
+                            style={{
+                              background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.05)" : "rgba(148, 163, 184, 0.1)",
+                              color: theme.textPrimary,
+                              border: "none",
+                              padding: "8px 12px",
+                              borderRadius: "8px",
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              textAlign: "center",
+                              cursor: "pointer",
+                            }}
+                          >
+                            Portfolio
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
