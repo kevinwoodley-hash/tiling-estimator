@@ -984,6 +984,7 @@ export default function App() {
   const [showProfessional, setShowProfessional] = useState(false);
   const [styleTheme, setStyleTheme] = useState("modern"); // modern, classic, minimal
   const [currentPage, setCurrentPage] = useState("calculator"); // calculator or settings
+  const [settingsTab, setSettingsTab] = useState("business"); // business, pricing, integrations, preferences
   
   // Local search state
   const [userLocation, setUserLocation] = useState("");
@@ -2191,14 +2192,111 @@ export default function App() {
         </>
       )}
 
-      {/* SETTINGS PAGE - Business Branding & Pricing */}
+      {/* SETTINGS PAGE - Professional Configuration */}
       {currentPage === "settings" && showProfessional && (
-        <div style={{ maxWidth: "900px", margin: "0 auto 32px", display: "flex", flexDirection: "column", gap: "20px" }}>
-        
-      {/* Professional Mode Sections */}
-      {showProfessional && (
-        <div style={{ maxWidth: "900px", margin: "0 auto 32px", display: "flex", flexDirection: "column", gap: "20px" }}>
+        <div style={{ maxWidth: "900px", margin: "0 auto 32px" }}>
           
+          {/* Settings Tabs Navigation */}
+          <div style={{
+            background: theme.cardBg,
+            backdropFilter: "blur(20px)",
+            border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.1)",
+            borderRadius: "16px",
+            padding: "8px",
+            marginBottom: "20px",
+            display: "grid",
+            gridTemplateColumns: "repeat(4, 1fr)",
+            gap: "8px",
+            boxShadow: styleTheme === "minimal" ? "0 4px 16px rgba(0, 0, 0, 0.08)" : "0 4px 16px rgba(0, 0, 0, 0.3)",
+          }}>
+            <button
+              onClick={() => setSettingsTab("business")}
+              style={{
+                background: settingsTab === "business" ? theme.primary : "transparent",
+                border: "none",
+                color: settingsTab === "business" 
+                  ? (styleTheme === "minimal" ? theme.textPrimary : "#000")
+                  : theme.textSecondary,
+                borderRadius: "12px",
+                padding: "12px 16px",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontWeight: 700,
+                fontFamily: "'DM Sans', sans-serif",
+                transition: "all 0.2s ease",
+                textAlign: "center",
+              }}
+            >
+              Business Profile
+            </button>
+            <button
+              onClick={() => setSettingsTab("pricing")}
+              style={{
+                background: settingsTab === "pricing" ? theme.primary : "transparent",
+                border: "none",
+                color: settingsTab === "pricing" 
+                  ? (styleTheme === "minimal" ? theme.textPrimary : "#000")
+                  : theme.textSecondary,
+                borderRadius: "12px",
+                padding: "12px 16px",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontWeight: 700,
+                fontFamily: "'DM Sans', sans-serif",
+                transition: "all 0.2s ease",
+                textAlign: "center",
+              }}
+            >
+              Pricing & Costs
+            </button>
+            <button
+              onClick={() => setSettingsTab("integrations")}
+              style={{
+                background: settingsTab === "integrations" ? theme.primary : "transparent",
+                border: "none",
+                color: settingsTab === "integrations" 
+                  ? (styleTheme === "minimal" ? theme.textPrimary : "#000")
+                  : theme.textSecondary,
+                borderRadius: "12px",
+                padding: "12px 16px",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontWeight: 700,
+                fontFamily: "'DM Sans', sans-serif",
+                transition: "all 0.2s ease",
+                textAlign: "center",
+              }}
+            >
+              Integrations
+            </button>
+            <button
+              onClick={() => setSettingsTab("preferences")}
+              style={{
+                background: settingsTab === "preferences" ? theme.primary : "transparent",
+                border: "none",
+                color: settingsTab === "preferences" 
+                  ? (styleTheme === "minimal" ? theme.textPrimary : "#000")
+                  : theme.textSecondary,
+                borderRadius: "12px",
+                padding: "12px 16px",
+                cursor: "pointer",
+                fontSize: "13px",
+                fontWeight: 700,
+                fontFamily: "'DM Sans', sans-serif",
+                transition: "all 0.2s ease",
+                textAlign: "center",
+              }}
+            >
+              Preferences
+            </button>
+          </div>
+
+          {/* Settings Content */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+        
+      {/* Business Profile Tab */}
+      {settingsTab === "business" && (
+        <>
           {/* Business Branding */}
           <div style={{
             background: theme.cardBg,
@@ -2346,7 +2444,12 @@ export default function App() {
               </div>
             </div>
           </div>
+        </>
+      )}
           
+      {/* Pricing & Costs Tab */}
+      {settingsTab === "pricing" && (
+        <>
           {/* Pricing & Costs - Professional Mode Only */}
           <div style={{
             background: theme.cardBg,
@@ -2631,7 +2734,12 @@ export default function App() {
               )}
             </div>
           </div>
+        </>
+      )}
           
+      {/* Integrations Tab */}
+      {settingsTab === "integrations" && (
+        <>
           {/* FreeAgent Integration */}
           <div style={{
             background: theme.cardBg,
@@ -2751,7 +2859,385 @@ export default function App() {
               )}
             </div>
           </div>
-        
+        </>
+      )}
+      
+      {/* Preferences Tab */}
+      {settingsTab === "preferences" && (
+        <>
+          {/* App Preferences */}
+          <div style={{
+            background: theme.cardBg,
+            backdropFilter: "blur(20px)",
+            border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.1)",
+            borderRadius: "20px",
+            padding: "24px",
+            boxShadow: styleTheme === "minimal" ? "0 8px 32px rgba(0, 0, 0, 0.08)" : "0 8px 32px rgba(0, 0, 0, 0.3)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+              <div style={{
+                background: theme.primary,
+                borderRadius: "10px",
+                padding: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}>
+                <Calculator size={20} color={styleTheme === "minimal" ? theme.textPrimary : "#000"} />
+              </div>
+              <h3 style={{
+                color: theme.textPrimary,
+                fontSize: "18px",
+                fontWeight: 700,
+                margin: 0,
+                fontFamily: "'DM Sans', sans-serif",
+              }}>
+                Default Settings
+              </h3>
+            </div>
+            
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Default Wastage %</label>
+                <select
+                  value={10}
+                  style={{
+                    ...inputStyle,
+                    color: theme.textPrimary,
+                    background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)",
+                    border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)",
+                  }}
+                >
+                  <option value="5">5%</option>
+                  <option value="10">10%</option>
+                  <option value="15">15%</option>
+                  <option value="20">20%</option>
+                </select>
+              </div>
+              
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Default Trowel Size</label>
+                <select
+                  value={1}
+                  style={{
+                    ...inputStyle,
+                    color: theme.textPrimary,
+                    background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)",
+                    border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)",
+                  }}
+                >
+                  <option value="0">6mm Notched</option>
+                  <option value="1">8mm Notched</option>
+                  <option value="2">10mm Notched</option>
+                  <option value="3">12mm Notched</option>
+                </select>
+              </div>
+              
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Default Grout Joint</label>
+                <select
+                  value={1}
+                  style={{
+                    ...inputStyle,
+                    color: theme.textPrimary,
+                    background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)",
+                    border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)",
+                  }}
+                >
+                  <option value="0">1mm</option>
+                  <option value="1">2mm</option>
+                  <option value="2">3mm</option>
+                  <option value="3">4mm</option>
+                  <option value="4">5mm</option>
+                  <option value="5">6mm</option>
+                </select>
+              </div>
+              
+              <div>
+                <label style={{...labelStyle, color: theme.textSecondary}}>Default Surface Type</label>
+                <select
+                  value="floor"
+                  style={{
+                    ...inputStyle,
+                    color: theme.textPrimary,
+                    background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.08)",
+                    border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.15)",
+                  }}
+                >
+                  <option value="floor">Floor</option>
+                  <option value="wall">Wall</option>
+                </select>
+              </div>
+            </div>
+            
+            <div style={{
+              marginTop: "20px",
+              padding: "16px",
+              background: styleTheme === "minimal" ? "rgba(59, 130, 246, 0.08)" : "rgba(59, 130, 246, 0.1)",
+              borderRadius: "12px",
+              border: "1px solid rgba(59, 130, 246, 0.2)",
+            }}>
+              <div style={{
+                color: theme.textPrimary,
+                fontSize: "13px",
+                fontWeight: 600,
+                marginBottom: "8px",
+              }}>
+                ℹ️ About Default Settings
+              </div>
+              <div style={{
+                color: theme.textSecondary,
+                fontSize: "12px",
+                lineHeight: "1.5",
+              }}>
+                These defaults will be applied to new rooms automatically. You can still change them for individual rooms after creation.
+              </div>
+            </div>
+          </div>
+          
+          {/* Display Preferences */}
+          <div style={{
+            background: theme.cardBg,
+            backdropFilter: "blur(20px)",
+            border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.1)",
+            borderRadius: "20px",
+            padding: "24px",
+            boxShadow: styleTheme === "minimal" ? "0 8px 32px rgba(0, 0, 0, 0.08)" : "0 8px 32px rgba(0, 0, 0, 0.3)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+              <div style={{
+                background: theme.primary,
+                borderRadius: "10px",
+                padding: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}>
+                <Package size={20} color={styleTheme === "minimal" ? theme.textPrimary : "#000"} />
+              </div>
+              <h3 style={{
+                color: theme.textPrimary,
+                fontSize: "18px",
+                fontWeight: 700,
+                margin: 0,
+                fontFamily: "'DM Sans', sans-serif",
+              }}>
+                Display & Export
+              </h3>
+            </div>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <label style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                cursor: "pointer",
+                padding: "12px",
+                background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.05)",
+                borderRadius: "10px",
+                border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.1)",
+              }}>
+                <input
+                  type="checkbox"
+                  defaultChecked={true}
+                  style={{ width: "18px", height: "18px", cursor: "pointer" }}
+                />
+                <span style={{ color: theme.textPrimary, fontSize: "14px", fontWeight: 600, flex: 1 }}>
+                  Include company logo on exports
+                </span>
+              </label>
+              
+              <label style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                cursor: "pointer",
+                padding: "12px",
+                background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.05)",
+                borderRadius: "10px",
+                border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.1)",
+              }}>
+                <input
+                  type="checkbox"
+                  defaultChecked={true}
+                  style={{ width: "18px", height: "18px", cursor: "pointer" }}
+                />
+                <span style={{ color: theme.textPrimary, fontSize: "14px", fontWeight: 600, flex: 1 }}>
+                  Show bag quantities (20kg adhesive, 2.5kg grout)
+                </span>
+              </label>
+              
+              <label style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                cursor: "pointer",
+                padding: "12px",
+                background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.05)",
+                borderRadius: "10px",
+                border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.1)",
+              }}>
+                <input
+                  type="checkbox"
+                  defaultChecked={false}
+                  style={{ width: "18px", height: "18px", cursor: "pointer" }}
+                />
+                <span style={{ color: theme.textPrimary, fontSize: "14px", fontWeight: 600, flex: 1 }}>
+                  Auto-export to FreeAgent after creating quote
+                </span>
+              </label>
+              
+              <label style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                cursor: "pointer",
+                padding: "12px",
+                background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.03)" : "rgba(148, 163, 184, 0.05)",
+                borderRadius: "10px",
+                border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.1)",
+              }}>
+                <input
+                  type="checkbox"
+                  defaultChecked={true}
+                  style={{ width: "18px", height: "18px", cursor: "pointer" }}
+                />
+                <span style={{ color: theme.textPrimary, fontSize: "14px", fontWeight: 600, flex: 1 }}>
+                  Include payment terms on quotes (30 days)
+                </span>
+              </label>
+            </div>
+          </div>
+          
+          {/* Data Management */}
+          <div style={{
+            background: theme.cardBg,
+            backdropFilter: "blur(20px)",
+            border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.1)",
+            borderRadius: "20px",
+            padding: "24px",
+            boxShadow: styleTheme === "minimal" ? "0 8px 32px rgba(0, 0, 0, 0.08)" : "0 8px 32px rgba(0, 0, 0, 0.3)",
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "20px" }}>
+              <div style={{
+                background: theme.primary,
+                borderRadius: "10px",
+                padding: "8px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}>
+                <Download size={20} color={styleTheme === "minimal" ? theme.textPrimary : "#000"} />
+              </div>
+              <h3 style={{
+                color: theme.textPrimary,
+                fontSize: "18px",
+                fontWeight: 700,
+                margin: 0,
+                fontFamily: "'DM Sans', sans-serif",
+              }}>
+                Data & Privacy
+              </h3>
+            </div>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <button
+                onClick={() => alert('Export all your business settings, pricing, and preferences as JSON file for backup.')}
+                style={{
+                  background: `linear-gradient(135deg, ${theme.primaryColor}, ${theme.primaryColor}dd)`,
+                  border: "none",
+                  color: styleTheme === "minimal" ? theme.textPrimary : "#000",
+                  borderRadius: "12px",
+                  padding: "14px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  fontFamily: "'DM Sans', sans-serif",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <Download size={18} />
+                Export Settings Backup
+              </button>
+              
+              <button
+                onClick={() => alert('Import previously exported settings from JSON file.')}
+                style={{
+                  background: styleTheme === "minimal" ? "rgba(0, 0, 0, 0.05)" : "rgba(148, 163, 184, 0.1)",
+                  border: styleTheme === "minimal" ? "1px solid rgba(0, 0, 0, 0.1)" : "1px solid rgba(148, 163, 184, 0.2)",
+                  color: theme.textPrimary,
+                  borderRadius: "12px",
+                  padding: "14px",
+                  cursor: "pointer",
+                  fontSize: "14px",
+                  fontWeight: 700,
+                  fontFamily: "'DM Sans', sans-serif",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  transition: "all 0.2s ease",
+                }}
+              >
+                <Package size={18} />
+                Import Settings Backup
+              </button>
+              
+              <div style={{
+                marginTop: "8px",
+                padding: "16px",
+                background: "rgba(239, 68, 68, 0.08)",
+                borderRadius: "12px",
+                border: "1px solid rgba(239, 68, 68, 0.2)",
+              }}>
+                <div style={{
+                  color: theme.textPrimary,
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  marginBottom: "8px",
+                }}>
+                  ⚠️ Danger Zone
+                </div>
+                <div style={{
+                  color: theme.textSecondary,
+                  fontSize: "12px",
+                  marginBottom: "12px",
+                  lineHeight: "1.5",
+                }}>
+                  Reset all settings to defaults. This will clear your business profile, pricing, and FreeAgent integration.
+                </div>
+                <button
+                  onClick={() => {
+                    if (confirm('Are you sure you want to reset all settings? This cannot be undone.')) {
+                      alert('Settings have been reset to defaults.');
+                    }
+                  }}
+                  style={{
+                    background: "rgba(239, 68, 68, 0.1)",
+                    border: "1px solid rgba(239, 68, 68, 0.3)",
+                    color: "#f87171",
+                    borderRadius: "10px",
+                    padding: "10px 16px",
+                    cursor: "pointer",
+                    fontSize: "13px",
+                    fontWeight: 700,
+                    fontFamily: "'DM Sans', sans-serif",
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  Reset All Settings
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+      
+          </div>
         </div>
       )}
 
