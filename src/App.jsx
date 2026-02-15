@@ -404,119 +404,166 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom, 
         )}
       </div>
 
-      {/* Tile & Wastage Settings */}
+      {/* Tile Configuration Section */}
       <div style={{
-        display: "grid",
-        gridTemplateColumns: isCustomTile ? "1fr 1fr 1fr" : "2fr 1fr",
-        gap: "12px",
-        marginBottom: "16px",
-      }}>
-        <div>
-          <label style={labelStyle}>Tile Size</label>
-          <select
-            value={room.tileSize}
-            onChange={(e) => updateField("tileSize", parseInt(e.target.value))}
-            style={selectStyle}
-          >
-            {TILE_SIZES.map((ts, i) => (
-              <option key={i} value={i}>{ts.label}</option>
-            ))}
-          </select>
-        </div>
-        {isCustomTile && (
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
-            <div>
-              <label style={labelStyle}>Tile W (mm)</label>
-              <input
-                type="number"
-                min="0"
-                placeholder="mm"
-                value={room.customTileW}
-                onChange={(e) => updateField("customTileW", e.target.value)}
-                style={inputStyle}
-              />
-            </div>
-            <div>
-              <label style={labelStyle}>Tile H (mm)</label>
-              <input
-                type="number"
-                min="0"
-                placeholder="mm"
-                value={room.customTileH}
-                onChange={(e) => updateField("customTileH", e.target.value)}
-                style={inputStyle}
-              />
-            </div>
-          </div>
-        )}
-        <div>
-          <label style={labelStyle}>Wastage %</label>
-          <select
-            value={room.wastage}
-            onChange={(e) => updateField("wastage", parseInt(e.target.value))}
-            style={selectStyle}
-          >
-            {WASTAGE_OPTIONS.map((w) => (
-              <option key={w} value={w}>{w}%</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Trowel Size & Grout Joint */}
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "1fr 1fr",
-        gap: "12px",
-        marginBottom: "16px",
-      }}>
-        <div>
-          <label style={labelStyle}>Trowel Size (Adhesive)</label>
-          <select
-            value={room.trowelSize}
-            onChange={(e) => updateField("trowelSize", parseInt(e.target.value))}
-            style={selectStyle}
-          >
-            {TROWEL_SIZES.map((ts, i) => (
-              <option key={i} value={i}>{ts.label} - {ts.description}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label style={labelStyle}>Grout Joint Width</label>
-          <select
-            value={room.groutJointWidth}
-            onChange={(e) => updateField("groutJointWidth", parseInt(e.target.value))}
-            style={selectStyle}
-          >
-            {GROUT_JOINT_WIDTHS.map((gj, i) => (
-              <option key={i} value={i}>{gj.label}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      {/* Surface Type & Material Options */}
-      <div style={{
-        background: "rgba(148, 163, 184, 0.05)",
-        backdropFilter: "blur(10px)",
-        border: "1px solid rgba(148, 163, 184, 0.1)",
+        background: "linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.05))",
+        border: "1px solid rgba(59, 130, 246, 0.2)",
         borderRadius: "16px",
         padding: "20px",
         marginBottom: "20px",
       }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
+        <div style={{ 
+          color: "#60a5fa", 
+          fontSize: "13px", 
+          fontWeight: 700, 
+          marginBottom: "16px",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          textTransform: "uppercase",
+          letterSpacing: "1px",
+        }}>
+          <span style={{ fontSize: "16px" }}>🔲</span>
+          Tile Configuration
+        </div>
+        
+        <div style={{ display: "grid", gridTemplateColumns: isCustomTile ? "2fr 1fr 1fr 1fr" : "2fr 1fr 1fr 1fr", gap: "12px" }}>
+          {/* Tile Size */}
+          <div>
+            <label style={labelStyle}>Tile Size</label>
+            <select
+              value={room.tileSize}
+              onChange={(e) => updateField("tileSize", parseInt(e.target.value))}
+              style={selectStyle}
+            >
+              {TILE_SIZES.map((ts, i) => (
+                <option key={i} value={i}>{ts.label}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Custom Tile Dimensions (if custom selected) */}
+          {isCustomTile && (
+            <>
+              <div>
+                <label style={labelStyle}>Width (mm)</label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="mm"
+                  value={room.customTileW}
+                  onChange={(e) => updateField("customTileW", e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Height (mm)</label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="mm"
+                  value={room.customTileH}
+                  onChange={(e) => updateField("customTileH", e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+            </>
+          )}
+          
+          {/* Wastage */}
+          {!isCustomTile && (
+            <div>
+              <label style={labelStyle}>Wastage</label>
+              <select
+                value={room.wastage}
+                onChange={(e) => updateField("wastage", parseInt(e.target.value))}
+                style={selectStyle}
+              >
+                {WASTAGE_OPTIONS.map((w) => (
+                  <option key={w} value={w}>{w}%</option>
+                ))}
+              </select>
+            </div>
+          )}
+          
+          {isCustomTile && (
+            <div>
+              <label style={labelStyle}>Wastage</label>
+              <select
+                value={room.wastage}
+                onChange={(e) => updateField("wastage", parseInt(e.target.value))}
+                style={selectStyle}
+              >
+                {WASTAGE_OPTIONS.map((w) => (
+                  <option key={w} value={w}>{w}%</option>
+                ))}
+              </select>
+            </div>
+          )}
+          
+          {/* Trowel Size */}
+          <div>
+            <label style={labelStyle}>Trowel</label>
+            <select
+              value={room.trowelSize}
+              onChange={(e) => updateField("trowelSize", parseInt(e.target.value))}
+              style={selectStyle}
+            >
+              {TROWEL_SIZES.map((ts, i) => (
+                <option key={i} value={i}>{ts.label}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Grout Joint */}
+          <div>
+            <label style={labelStyle}>Joint</label>
+            <select
+              value={room.groutJointWidth}
+              onChange={(e) => updateField("groutJointWidth", parseInt(e.target.value))}
+              style={selectStyle}
+            >
+              {GROUT_JOINT_WIDTHS.map((gj, i) => (
+                <option key={i} value={i}>{gj.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Surface Type & Materials Section */}
+      <div style={{
+        background: "linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(147, 51, 234, 0.05))",
+        border: "1px solid rgba(168, 85, 247, 0.2)",
+        borderRadius: "16px",
+        padding: "20px",
+        marginBottom: "20px",
+      }}>
+        <div style={{ 
+          color: "#c4b5fd", 
+          fontSize: "13px", 
+          fontWeight: 700, 
+          marginBottom: "16px",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          textTransform: "uppercase",
+          letterSpacing: "1px",
+        }}>
+          <span style={{ fontSize: "16px" }}>📋</span>
+          Surface & Materials
+        </div>
+        
+        <div style={{ display: "grid", gridTemplateColumns: room.surfaceType === "wall" ? "1fr 1fr" : "1fr", gap: "12px", marginBottom: "16px" }}>
           <div>
             <label style={labelStyle}>Surface Type</label>
             <select
               value={room.surfaceType}
               onChange={(e) => {
                 updateField("surfaceType", e.target.value);
-                // Auto-set to areas mode when changing surface type to ensure calculator is visible
                 if (e.target.value === "floor") {
                   updateField("calculationMode", "areas");
                 } else if (e.target.value === "wall") {
-                  // Default to areas mode for walls (user can switch to walls mode if needed)
                   updateField("calculationMode", "areas");
                 }
               }}
@@ -542,277 +589,286 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom, 
           )}
         </div>
 
-        {room.calculationMode === "walls" && room.surfaceType === "wall" && (
-          <div style={{
-            background: "linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(147, 51, 234, 0.05))",
-            border: "1px solid rgba(168, 85, 247, 0.2)",
-            borderRadius: "12px",
-            padding: "16px",
-            marginBottom: "16px",
+        {/* Optional Materials - Compact grid layout */}
+        {room.surfaceType === "floor" && (
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "repeat(3, 1fr)", 
+            gap: "8px",
           }}>
-            <div style={{ 
-              color: "#c4b5fd", 
-              fontSize: "12px", 
-              fontWeight: 600, 
-              marginBottom: "12px",
-              display: "flex",
-              alignItems: "center",
-              gap: "6px",
-            }}>
-              <span style={{ fontSize: "16px" }}>📐</span>
-              Complete Wall Calculation
-            </div>
-            
-            {/* Helpful hint for wall calculator */}
-            {!room.roomLength && !room.roomWidth && (
-              <div style={{
-                background: "rgba(59, 130, 246, 0.1)",
-                border: "1px solid rgba(59, 130, 246, 0.2)",
-                borderRadius: "8px",
-                padding: "10px 12px",
-                marginBottom: "12px",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}>
-                <span style={{ fontSize: "16px" }}>💡</span>
-                <div style={{ 
-                  color: "#93c5fd", 
-                  fontSize: "11px",
-                  lineHeight: "1.4",
-                }}>
-                  Enter room dimensions below to calculate total wall area automatically
-                </div>
-              </div>
-            )}
-            
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
-              <div>
-                <label style={labelStyle}>Room Length (m)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="e.g., 4.0"
-                  value={room.roomLength}
-                  onChange={(e) => updateField("roomLength", e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Room Width (m)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="e.g., 3.0"
-                  value={room.roomWidth}
-                  onChange={(e) => updateField("roomWidth", e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Ceiling Height (m)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  placeholder="2.4"
-                  value={room.ceilingHeight}
-                  onChange={(e) => updateField("ceilingHeight", e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
-            </div>
-            <div style={{ 
-              color: "#64748b", 
-              fontSize: "11px", 
-              marginTop: "8px",
-              fontStyle: "italic",
-              textAlign: "center",
-            }}>
-              Formula: 2 × Height × (Length + Width)
-            </div>
-            {room.roomLength && room.roomWidth && room.ceilingHeight && (
-              <div style={{
-                marginTop: "12px",
-                padding: "12px",
-                background: "rgba(168, 85, 247, 0.15)",
-                borderRadius: "8px",
-              }}>
-                <div style={{ 
-                  fontSize: "12px", 
-                  color: "#c4b5fd", 
-                  marginBottom: "6px",
-                  fontFamily: "'DM Mono', monospace",
-                }}>
-                  2 × {room.ceilingHeight}m × ({room.roomLength}m + {room.roomWidth}m)
-                </div>
-                <div style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}>
-                  <span style={{ color: "#c4b5fd", fontSize: "13px", fontWeight: 600 }}>
-                    Total Wall Area:
-                  </span>
-                  <span style={{ color: "#a855f7", fontSize: "18px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
-                    {totalSqm.toFixed(2)} m²
-                  </span>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        {room.surfaceType === "floor" ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            <div style={{ 
-              color: "#94a3b8", 
-              fontSize: "11px", 
-              fontWeight: 600, 
-              textTransform: "uppercase", 
-              letterSpacing: "1px",
-              marginBottom: "4px",
-            }}>
-              Floor Materials
-            </div>
             <label style={{
               display: "flex",
               alignItems: "center",
-              gap: "10px",
+              gap: "8px",
               color: "#e2e8f0",
-              fontSize: "14px",
+              fontSize: "13px",
               cursor: "pointer",
               fontFamily: "'DM Sans', sans-serif",
-              padding: "8px 12px",
+              padding: "10px 12px",
               borderRadius: "8px",
               transition: "all 0.2s ease",
-              background: room.useCementBoard ? "rgba(59, 130, 246, 0.1)" : "transparent",
-            }}
-            onMouseEnter={(e) => { e.target.style.background = room.useCementBoard ? "rgba(59, 130, 246, 0.15)" : "rgba(148, 163, 184, 0.05)"; }}
-            onMouseLeave={(e) => { e.target.style.background = room.useCementBoard ? "rgba(59, 130, 246, 0.1)" : "transparent"; }}
-            >
+              background: room.useCementBoard ? "rgba(168, 85, 247, 0.15)" : "rgba(148, 163, 184, 0.05)",
+              border: `1px solid ${room.useCementBoard ? "rgba(168, 85, 247, 0.3)" : "rgba(148, 163, 184, 0.1)"}`,
+            }}>
               <input
                 type="checkbox"
                 checked={room.useCementBoard}
                 onChange={(e) => updateField("useCementBoard", e.target.checked)}
-                style={{ cursor: "pointer", width: "18px", height: "18px" }}
+                style={{ cursor: "pointer", width: "16px", height: "16px" }}
               />
               <span>Cement Board</span>
             </label>
+            
             <label style={{
               display: "flex",
               alignItems: "center",
-              gap: "10px",
+              gap: "8px",
               color: "#e2e8f0",
-              fontSize: "14px",
+              fontSize: "13px",
               cursor: "pointer",
               fontFamily: "'DM Sans', sans-serif",
-              padding: "8px 12px",
+              padding: "10px 12px",
               borderRadius: "8px",
               transition: "all 0.2s ease",
-              background: room.useDitraMat ? "rgba(59, 130, 246, 0.1)" : "transparent",
-            }}
-            onMouseEnter={(e) => { e.target.style.background = room.useDitraMat ? "rgba(59, 130, 246, 0.15)" : "rgba(148, 163, 184, 0.05)"; }}
-            onMouseLeave={(e) => { e.target.style.background = room.useDitraMat ? "rgba(59, 130, 246, 0.1)" : "transparent"; }}
-            >
+              background: room.useDitraMat ? "rgba(168, 85, 247, 0.15)" : "rgba(148, 163, 184, 0.05)",
+              border: `1px solid ${room.useDitraMat ? "rgba(168, 85, 247, 0.3)" : "rgba(148, 163, 184, 0.1)"}`,
+            }}>
               <input
                 type="checkbox"
                 checked={room.useDitraMat}
                 onChange={(e) => updateField("useDitraMat", e.target.checked)}
-                style={{ cursor: "pointer", width: "18px", height: "18px" }}
+                style={{ cursor: "pointer", width: "16px", height: "16px" }}
               />
               <span>Ditra Mat</span>
             </label>
+            
             <label style={{
               display: "flex",
               alignItems: "center",
-              gap: "10px",
+              gap: "8px",
               color: "#e2e8f0",
-              fontSize: "14px",
+              fontSize: "13px",
               cursor: "pointer",
               fontFamily: "'DM Sans', sans-serif",
-              padding: "8px 12px",
+              padding: "10px 12px",
               borderRadius: "8px",
               transition: "all 0.2s ease",
-              background: room.useFloorTanking ? "rgba(59, 130, 246, 0.1)" : "transparent",
-            }}
-            onMouseEnter={(e) => { e.target.style.background = room.useFloorTanking ? "rgba(59, 130, 246, 0.15)" : "rgba(148, 163, 184, 0.05)"; }}
-            onMouseLeave={(e) => { e.target.style.background = room.useFloorTanking ? "rgba(59, 130, 246, 0.1)" : "transparent"; }}
-            >
+              background: room.useFloorTanking ? "rgba(168, 85, 247, 0.15)" : "rgba(148, 163, 184, 0.05)",
+              border: `1px solid ${room.useFloorTanking ? "rgba(168, 85, 247, 0.3)" : "rgba(148, 163, 184, 0.1)"}`,
+            }}>
               <input
                 type="checkbox"
                 checked={room.useFloorTanking}
                 onChange={(e) => updateField("useFloorTanking", e.target.checked)}
-                style={{ cursor: "pointer", width: "18px", height: "18px" }}
+                style={{ cursor: "pointer", width: "16px", height: "16px" }}
               />
-              <span>Tanking (Floor)</span>
+              <span>Floor Tanking</span>
             </label>
           </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-            <div style={{ 
-              color: "#94a3b8", 
-              fontSize: "11px", 
-              fontWeight: 600, 
-              textTransform: "uppercase", 
-              letterSpacing: "1px",
-              marginBottom: "4px",
-            }}>
-              Wall Materials
-            </div>
+        )}
+
+        {room.surfaceType === "wall" && room.calculationMode === "areas" && (
+          <div style={{ 
+            display: "grid", 
+            gridTemplateColumns: "repeat(3, 1fr)", 
+            gap: "8px",
+          }}>
             <label style={{
               display: "flex",
               alignItems: "center",
-              gap: "10px",
+              gap: "8px",
               color: "#e2e8f0",
-              fontSize: "14px",
+              fontSize: "13px",
               cursor: "pointer",
               fontFamily: "'DM Sans', sans-serif",
-              padding: "8px 12px",
+              padding: "10px 12px",
               borderRadius: "8px",
               transition: "all 0.2s ease",
-              background: room.useWallTanking ? "rgba(168, 85, 247, 0.1)" : "transparent",
-            }}
-            onMouseEnter={(e) => { e.target.style.background = room.useWallTanking ? "rgba(168, 85, 247, 0.15)" : "rgba(148, 163, 184, 0.05)"; }}
-            onMouseLeave={(e) => { e.target.style.background = room.useWallTanking ? "rgba(168, 85, 247, 0.1)" : "transparent"; }}
-            >
+              background: room.useWallTanking ? "rgba(168, 85, 247, 0.15)" : "rgba(148, 163, 184, 0.05)",
+              border: `1px solid ${room.useWallTanking ? "rgba(168, 85, 247, 0.3)" : "rgba(148, 163, 184, 0.1)"}`,
+            }}>
               <input
                 type="checkbox"
                 checked={room.useWallTanking}
                 onChange={(e) => updateField("useWallTanking", e.target.checked)}
-                style={{ cursor: "pointer", width: "18px", height: "18px" }}
+                style={{ cursor: "pointer", width: "16px", height: "16px" }}
               />
-              <span>Tanking (Wall)</span>
+              <span>Wall Tanking</span>
             </label>
+            
             <label style={{
               display: "flex",
               alignItems: "center",
-              gap: "10px",
+              gap: "8px",
               color: "#e2e8f0",
-              fontSize: "14px",
+              fontSize: "13px",
               cursor: "pointer",
               fontFamily: "'DM Sans', sans-serif",
-              padding: "8px 12px",
+              padding: "10px 12px",
               borderRadius: "8px",
               transition: "all 0.2s ease",
-              background: room.useTileTrim ? "rgba(168, 85, 247, 0.1)" : "transparent",
-            }}
-            onMouseEnter={(e) => { e.target.style.background = room.useTileTrim ? "rgba(168, 85, 247, 0.15)" : "rgba(148, 163, 184, 0.05)"; }}
-            onMouseLeave={(e) => { e.target.style.background = room.useTileTrim ? "rgba(168, 85, 247, 0.1)" : "transparent"; }}
-            >
+              background: room.useTileTrim ? "rgba(168, 85, 247, 0.15)" : "rgba(148, 163, 184, 0.05)",
+              border: `1px solid ${room.useTileTrim ? "rgba(168, 85, 247, 0.3)" : "rgba(148, 163, 184, 0.1)"}`,
+            }}>
               <input
                 type="checkbox"
                 checked={room.useTileTrim}
                 onChange={(e) => updateField("useTileTrim", e.target.checked)}
-                style={{ cursor: "pointer", width: "18px", height: "18px" }}
+                style={{ cursor: "pointer", width: "16px", height: "16px" }}
               />
               <span>Tile Trim</span>
             </label>
+            
             <label style={{
               display: "flex",
               alignItems: "center",
+              gap: "8px",
+              color: "#e2e8f0",
+              fontSize: "13px",
+              cursor: "pointer",
+              fontFamily: "'DM Sans', sans-serif",
+              padding: "10px 12px",
+              borderRadius: "8px",
+              transition: "all 0.2s ease",
+              background: room.useWallPrimer ? "rgba(168, 85, 247, 0.15)" : "rgba(148, 163, 184, 0.05)",
+              border: `1px solid ${room.useWallPrimer ? "rgba(168, 85, 247, 0.3)" : "rgba(148, 163, 184, 0.1)"}`,
+            }}>
+              <input
+                type="checkbox"
+                checked={room.useWallPrimer}
+                onChange={(e) => updateField("useWallPrimer", e.target.checked)}
+                style={{ cursor: "pointer", width: "16px", height: "16px" }}
+              />
+              <span>Wall Primer</span>
+            </label>
+          </div>
+        )}
+      </div>
+
+      {/* Complete Wall Calculation (only shown when in walls mode) */}
+      {room.calculationMode === "walls" && room.surfaceType === "wall" && (
+        <div style={{
+          background: "linear-gradient(135deg, rgba(168, 85, 247, 0.1), rgba(147, 51, 234, 0.05))",
+          border: "1px solid rgba(168, 85, 247, 0.2)",
+          borderRadius: "12px",
+          padding: "16px",
+          marginBottom: "16px",
+        }}>
+          <div style={{ 
+            color: "#c4b5fd", 
+            fontSize: "12px", 
+            fontWeight: 600, 
+            marginBottom: "12px",
+            display: "flex",
+            alignItems: "center",
+            gap: "6px",
+          }}>
+            <span style={{ fontSize: "16px" }}>📐</span>
+            Complete Wall Calculation
+          </div>
+          
+          {!room.roomLength && !room.roomWidth && (
+            <div style={{
+              background: "rgba(59, 130, 246, 0.1)",
+              border: "1px solid rgba(59, 130, 246, 0.2)",
+              borderRadius: "8px",
+              padding: "10px 12px",
+              marginBottom: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+            }}>
+              <span style={{ fontSize: "16px" }}>💡</span>
+              <div style={{ 
+                color: "#93c5fd", 
+                fontSize: "11px",
+                lineHeight: "1.4",
+              }}>
+                Enter room dimensions below to calculate total wall area automatically
+              </div>
+            </div>
+          )}
+          
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "12px" }}>
+            <div>
+              <label style={labelStyle}>Room Length (m)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="e.g., 4.0"
+                value={room.roomLength}
+                onChange={(e) => updateField("roomLength", e.target.value)}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Room Width (m)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="e.g., 3.0"
+                value={room.roomWidth}
+                onChange={(e) => updateField("roomWidth", e.target.value)}
+                style={inputStyle}
+              />
+            </div>
+            <div>
+              <label style={labelStyle}>Ceiling Height (m)</label>
+              <input
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="2.4"
+                value={room.ceilingHeight}
+                onChange={(e) => updateField("ceilingHeight", e.target.value)}
+                style={inputStyle}
+              />
+            </div>
+          </div>
+          <div style={{ 
+            color: "#64748b", 
+            fontSize: "11px", 
+            marginTop: "8px",
+            fontStyle: "italic",
+            textAlign: "center",
+          }}>
+            Formula: 2 × Height × (Length + Width)
+          </div>
+          {room.roomLength && room.roomWidth && room.ceilingHeight && (
+            <div style={{
+              marginTop: "12px",
+              padding: "12px",
+              background: "rgba(168, 85, 247, 0.15)",
+              borderRadius: "8px",
+            }}>
+              <div style={{ 
+                fontSize: "12px", 
+                color: "#c4b5fd", 
+                marginBottom: "6px",
+                fontFamily: "'DM Mono', monospace",
+              }}>
+                2 × {room.ceilingHeight}m × ({room.roomLength}m + {room.roomWidth}m)
+              </div>
+              <div style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}>
+                <span style={{ color: "#c4b5fd", fontSize: "13px", fontWeight: 600 }}>
+                  Total Wall Area:
+                </span>
+                <span style={{ color: "#a855f7", fontSize: "18px", fontWeight: 800, fontFamily: "'DM Mono', monospace" }}>
+                  {totalSqm.toFixed(2)} m²
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Areas */}
               gap: "10px",
               color: "#e2e8f0",
               fontSize: "14px",
