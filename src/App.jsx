@@ -404,133 +404,6 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom, 
         )}
       </div>
 
-      {/* Tile Configuration Section */}
-      <div style={{
-        background: "linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.05))",
-        border: "1px solid rgba(59, 130, 246, 0.2)",
-        borderRadius: "16px",
-        padding: "20px",
-        marginBottom: "20px",
-      }}>
-        <div style={{ 
-          color: "#60a5fa", 
-          fontSize: "13px", 
-          fontWeight: 700, 
-          marginBottom: "16px",
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          textTransform: "uppercase",
-          letterSpacing: "1px",
-        }}>
-          <span style={{ fontSize: "16px" }}>🔲</span>
-          Tile Configuration
-        </div>
-        
-        <div style={{ display: "grid", gridTemplateColumns: isCustomTile ? "2fr 1fr 1fr 1fr" : "2fr 1fr 1fr 1fr", gap: "12px" }}>
-          {/* Tile Size */}
-          <div>
-            <label style={labelStyle}>Tile Size</label>
-            <select
-              value={room.tileSize}
-              onChange={(e) => updateField("tileSize", parseInt(e.target.value))}
-              style={selectStyle}
-            >
-              {TILE_SIZES.map((ts, i) => (
-                <option key={i} value={i}>{ts.label}</option>
-              ))}
-            </select>
-          </div>
-          
-          {/* Custom Tile Dimensions (if custom selected) */}
-          {isCustomTile && (
-            <>
-              <div>
-                <label style={labelStyle}>Width (mm)</label>
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="mm"
-                  value={room.customTileW}
-                  onChange={(e) => updateField("customTileW", e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
-              <div>
-                <label style={labelStyle}>Height (mm)</label>
-                <input
-                  type="number"
-                  min="0"
-                  placeholder="mm"
-                  value={room.customTileH}
-                  onChange={(e) => updateField("customTileH", e.target.value)}
-                  style={inputStyle}
-                />
-              </div>
-            </>
-          )}
-          
-          {/* Wastage */}
-          {!isCustomTile && (
-            <div>
-              <label style={labelStyle}>Wastage</label>
-              <select
-                value={room.wastage}
-                onChange={(e) => updateField("wastage", parseInt(e.target.value))}
-                style={selectStyle}
-              >
-                {WASTAGE_OPTIONS.map((w) => (
-                  <option key={w} value={w}>{w}%</option>
-                ))}
-              </select>
-            </div>
-          )}
-          
-          {isCustomTile && (
-            <div>
-              <label style={labelStyle}>Wastage</label>
-              <select
-                value={room.wastage}
-                onChange={(e) => updateField("wastage", parseInt(e.target.value))}
-                style={selectStyle}
-              >
-                {WASTAGE_OPTIONS.map((w) => (
-                  <option key={w} value={w}>{w}%</option>
-                ))}
-              </select>
-            </div>
-          )}
-          
-          {/* Trowel Size */}
-          <div>
-            <label style={labelStyle}>Trowel</label>
-            <select
-              value={room.trowelSize}
-              onChange={(e) => updateField("trowelSize", parseInt(e.target.value))}
-              style={selectStyle}
-            >
-              {TROWEL_SIZES.map((ts, i) => (
-                <option key={i} value={i}>{ts.label}</option>
-              ))}
-            </select>
-          </div>
-          
-          {/* Grout Joint */}
-          <div>
-            <label style={labelStyle}>Joint</label>
-            <select
-              value={room.groutJointWidth}
-              onChange={(e) => updateField("groutJointWidth", parseInt(e.target.value))}
-              style={selectStyle}
-            >
-              {GROUT_JOINT_WIDTHS.map((gj, i) => (
-                <option key={i} value={i}>{gj.label}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
       {/* Surface Type & Materials Section */}
       <div style={{
         background: "linear-gradient(135deg, rgba(168, 85, 247, 0.08), rgba(147, 51, 234, 0.05))",
@@ -560,12 +433,13 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom, 
             <select
               value={room.surfaceType}
               onChange={(e) => {
-                updateField("surfaceType", e.target.value);
-                if (e.target.value === "floor") {
-                  updateField("calculationMode", "areas");
-                } else if (e.target.value === "wall") {
-                  updateField("calculationMode", "areas");
-                }
+                const newSurfaceType = e.target.value;
+                // Batch both updates together to prevent race condition
+                onUpdateRoom(room.id, {
+                  ...room,
+                  surfaceType: newSurfaceType,
+                  calculationMode: "areas" // Always default to areas mode when changing surface
+                });
               }}
               style={selectStyle}
             >
@@ -984,6 +858,133 @@ function RoomCard({ room, roomIndex, onUpdateRoom, onRemoveRoom, canRemoveRoom, 
           </div>
         </div>
       )}
+
+      {/* Tile Configuration Section - Moved below areas */}
+      <div style={{
+        background: "linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(37, 99, 235, 0.05))",
+        border: "1px solid rgba(59, 130, 246, 0.2)",
+        borderRadius: "16px",
+        padding: "20px",
+        marginBottom: "20px",
+      }}>
+        <div style={{ 
+          color: "#60a5fa", 
+          fontSize: "13px", 
+          fontWeight: 700, 
+          marginBottom: "16px",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          textTransform: "uppercase",
+          letterSpacing: "1px",
+        }}>
+          <span style={{ fontSize: "16px" }}>🔲</span>
+          Tile Configuration
+        </div>
+        
+        <div style={{ display: "grid", gridTemplateColumns: isCustomTile ? "2fr 1fr 1fr 1fr" : "2fr 1fr 1fr 1fr", gap: "12px" }}>
+          {/* Tile Size */}
+          <div>
+            <label style={labelStyle}>Tile Size</label>
+            <select
+              value={room.tileSize}
+              onChange={(e) => updateField("tileSize", parseInt(e.target.value))}
+              style={selectStyle}
+            >
+              {TILE_SIZES.map((ts, i) => (
+                <option key={i} value={i}>{ts.label}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Custom Tile Dimensions (if custom selected) */}
+          {isCustomTile && (
+            <>
+              <div>
+                <label style={labelStyle}>Width (mm)</label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="mm"
+                  value={room.customTileW}
+                  onChange={(e) => updateField("customTileW", e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label style={labelStyle}>Height (mm)</label>
+                <input
+                  type="number"
+                  min="0"
+                  placeholder="mm"
+                  value={room.customTileH}
+                  onChange={(e) => updateField("customTileH", e.target.value)}
+                  style={inputStyle}
+                />
+              </div>
+            </>
+          )}
+          
+          {/* Wastage */}
+          {!isCustomTile && (
+            <div>
+              <label style={labelStyle}>Wastage</label>
+              <select
+                value={room.wastage}
+                onChange={(e) => updateField("wastage", parseInt(e.target.value))}
+                style={selectStyle}
+              >
+                {WASTAGE_OPTIONS.map((w) => (
+                  <option key={w} value={w}>{w}%</option>
+                ))}
+              </select>
+            </div>
+          )}
+          
+          {isCustomTile && (
+            <div>
+              <label style={labelStyle}>Wastage</label>
+              <select
+                value={room.wastage}
+                onChange={(e) => updateField("wastage", parseInt(e.target.value))}
+                style={selectStyle}
+              >
+                {WASTAGE_OPTIONS.map((w) => (
+                  <option key={w} value={w}>{w}%</option>
+                ))}
+              </select>
+            </div>
+          )}
+          
+          {/* Trowel Size */}
+          <div>
+            <label style={labelStyle}>Trowel</label>
+            <select
+              value={room.trowelSize}
+              onChange={(e) => updateField("trowelSize", parseInt(e.target.value))}
+              style={selectStyle}
+            >
+              {TROWEL_SIZES.map((ts, i) => (
+                <option key={i} value={i}>{ts.label}</option>
+              ))}
+            </select>
+          </div>
+          
+          {/* Grout Joint */}
+          <div>
+            <label style={labelStyle}>Joint</label>
+            <select
+              value={room.groutJointWidth}
+              onChange={(e) => updateField("groutJointWidth", parseInt(e.target.value))}
+              style={selectStyle}
+            >
+              {GROUT_JOINT_WIDTHS.map((gj, i) => (
+                <option key={i} value={i}>{gj.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </div>
 
       {/* Room Summary */}
       <div style={{
