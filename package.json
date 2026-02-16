@@ -6,12 +6,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/kevinwoodley/tiling-estimator.git"
+    "url": "https://github.com/kevinwoodley-hash/tiling-estimator.git"
   },
   "bugs": {
-    "url": "https://github.com/kevinwoodley/tiling-estimator/issues"
+    "url": "https://github.com/kevinwoodley-hash/tiling-estimator/issues"
   },
-  "homepage": "https://github.com/kevinwoodley/tiling-estimator#readme",
+  "homepage": "https://github.com/kevinwoodley-hash/tiling-estimator#readme",
   "keywords": [
     "tiling",
     "calculator",
